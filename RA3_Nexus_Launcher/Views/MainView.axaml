@@ -3,14 +3,18 @@
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:vm="clr-namespace:RA3_Nexus_Launcher.ViewModels"
-			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
 			 x:Class="RA3_Nexus_Launcher.Views.MainView"
-			 x:DataType="vm:MainViewModel">
-	<Design.DataContext>
-		<!-- This only sets the DataContext for the previewer in an IDE,
-		to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-		<vm:MainViewModel />
-	</Design.DataContext>
+			 x:DataType="vm:MainViewModel"
+			 Padding="0">
+
+	<UserControl.Styles>
+		<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderBrush" Value="Transparent" />
+			<Setter Property="TextBlock.Foreground" Value="Black" />
+		</Style>
+	</UserControl.Styles>
 
 	<UserControl.Background>
 		<ImageBrush Source="avares://RA3_Nexus_Launcher/Assets/Background.png"
@@ -19,5 +23,114 @@
 					AlignmentY="Center" />
 	</UserControl.Background>
 
-	<TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+	<Grid RowDefinitions="Auto, *, Auto">
+		<StackPanel Grid.Row="0"
+					Orientation="Horizontal"
+					HorizontalAlignment="Right"
+					VerticalAlignment="Top"
+					FlowDirection="RightToLeft"
+					Spacing="4">
+
+			<Button	Background="Transparent"
+					Foreground="Black"
+					Cursor="Hand"
+					Name="CloseButton"
+					Width="32"
+					Height="32"
+					CornerRadius="0"
+					Command="{Binding CloseWindowCommand}"
+					HorizontalAlignment="Right"
+					VerticalAlignment="Top"
+					Content="✕"/>
+
+			<Button Background="Transparent"
+					Margin="0.75,0,0,0"
+					Foreground="Black"
+					Cursor="Hand"
+					Name="MinimizeButton"
+					Width="32"
+					Height="32"
+					CornerRadius="0"
+					Command="{Binding MinimizeWindowCommand}"
+					HorizontalAlignment="Right"
+					VerticalAlignment="Top"
+					Content="—"/>
+		</StackPanel>
+
+		<Grid Grid.Row="2"
+			  ColumnDefinitions="Auto,Auto,Auto"
+			  RowDefinitions="Auto, Auto"
+			  Background="White"
+			  HorizontalAlignment="Center"
+			  Margin="0,0,0,40">
+
+			<Button Grid.Column="0" Grid.Row="0"
+					Name="btnBattleNet"
+					MinWidth="60"
+					MinHeight="60">
+				<Button.Content>
+
+				</Button.Content>
+			</Button>
+
+			<Button Grid.Column="1" Grid.Row="0"
+					Name="btnLaunch"
+					MinWidth="260"
+					MinHeight="60"
+					Content="Launch"
+					VerticalContentAlignment="Center"
+					HorizontalContentAlignment="Center"
+					FontSize="24"/>
+
+			<ComboBox Grid.Column="1" Grid.Row="1"
+					  Name="cmbModList"
+					  Margin="0,5,0,0"
+					  MinWidth="260"
+					  MinHeight="60"/>
+
+			<Button Grid.Column="2" Grid.Row="0"
+					Name="btnSettings"
+					MinWidth="60"
+					MinHeight="60">
+				<Button.Content>
+
+				</Button.Content>
+			</Button>
+		</Grid>
+
+		<TextBlock Grid.Column="2" Grid.Row="2"
+				   Name="txtVersion"
+				   Text="v1.0"
+				   FontSize="20"
+				   FontWeight="Bold"
+				   Foreground="#ecc084"
+				   Margin="0,0,96,25"
+				   HorizontalAlignment="Right"
+				   VerticalAlignment="Bottom"/>
+
+		<StackPanel Grid.Column="0" Grid.Row="2"
+					Orientation="Horizontal"
+					FlowDirection="LeftToRight"
+					Margin="140,0,0,-95"
+					Spacing="5">
+
+			<Button Name="btnDiscord"
+					Width="40"
+					Height="40"
+					Background="White"
+					ToolTip.Tip="Discord Server"/>
+
+			<Button Name="btnGithub"
+					Width="40"
+					Height="40"
+					Background="White"
+					ToolTip.Tip="My Github"/>
+
+			<Button Name="btnModDB"
+					Width="40"
+					Height="40"
+					Background="White"
+					ToolTip.Tip="My ModDB"/>
+		</StackPanel>
+	</Grid>
 </UserControl>
