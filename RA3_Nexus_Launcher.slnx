@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RA3_Nexus_Launcher.Desktop/RA3_Nexus_Launcher.Desktop.csproj" />
+  <Project Path="RA3_Nexus_Launcher/RA3_Nexus_Launcher.csproj" />
+</Solution>
