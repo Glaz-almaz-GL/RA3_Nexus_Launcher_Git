@@ -1,8 +1,13 @@
 ﻿using RA3_Nexus_Launcher.Constants;
+using RA3_Nexus_Launcher.Managers;
+using RA3_Nexus_Launcher.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace RA3_Nexus_Launcher.Helpers
@@ -16,112 +21,107 @@ namespace RA3_Nexus_Launcher.Helpers
 
         public static void EnableMaps()
         {
-            RegistryHelper.EnableMapSync();
+            RegistryHelper.EnableMaps();
         }
 
-        /// <summary>
-        /// Получает список доступных профилей игры из папки профилей.
-        /// </summary>
-        /// <returns>Список имён доступных игровых профилей.</returns>
-        public static List<string> GetProfilesList()
+        public static void StartGame(InstalledModInfo? mod = null, string[]? additionalArgs = null)
         {
-            // Проверяем, существует ли файл directory.ini
-            if (!File.Exists(PathConstants.RA3ProfilesFolder + "\\directory.ini"))
+            var settings = SettingsManager.CurrentSettings;
+            string gamePath = settings.GameFolderPath;
+
+            // Проверяем, установлен ли путь к игре
+            if (string.IsNullOrEmpty(gamePath))
             {
-                // Логично возвращать пустой список, если файл не найден
-                return [];
+                throw new InvalidOperationException("Путь к игре Red Alert 3 не установлен в настройках.");
             }
 
-            // Читаем только первую строку из directory.ini
-            string? firstLine = null;
+            // Полный путь к исполняемому файлу игры
+            string executablePath = Path.Combine(gamePath, "RA3.exe");
+
+            // Проверяем, существует ли исполняемый файл
+            if (!File.Exists(executablePath))
+            {
+                throw new FileNotFoundException($"Исполняемый файл игры не найден: {executablePath}");
+            }
+
+            // Собираем аргументы командной строки
+            var arguments = new StringBuilder();
+
+            // Добавляем LaunchParameters из настроек (если есть)
+            if (settings.LaunchParameters != null)
+            {
+                foreach (var param in settings.LaunchParameters.Where(param => !string.IsNullOrEmpty(param)))
+                {
+                    arguments.Append($"\"{param}\" ");
+                }
+            }
+
+            // *** Логика для мода ***
+            bool hasModConfigInSettings = settings.LaunchParameters?.Any(p => p?.Equals("-modconfig", StringComparison.OrdinalIgnoreCase) == true) == true;
+
+            if (mod != null)
+            {
+                // Если передан мод, добавляем -modconfig с путем к его .skudef файлу
+                // Предполагается, что ModPath содержит относительный путь от папки игры или абсолютный путь к .skudef
+                // Если ModPath - относительный, нужно составить полный путь:
+                string fullModConfigPath = mod.ModPath;
+                if (!Path.IsPathRooted(mod.ModPath))
+                {
+                    fullModConfigPath = Path.Combine(gamePath, mod.ModPath);
+                }
+
+                // Проверяем, существует ли файл мода
+                if (!File.Exists(fullModConfigPath))
+                {
+                    throw new FileNotFoundException($"Файл конфигурации мода не найден: {fullModConfigPath}");
+                }
+
+                arguments.Append($"-modconfig \"{fullModConfigPath}\" ");
+                // Не добавляем -runver, если используется мод
+            }
+            else
+            {
+                // Если мод НЕ передан, проверяем, есть ли -modconfig в LaunchParameters
+                if (!hasModConfigInSettings)
+                {
+                    // Если -modconfig НЕ указан ни в LaunchParameters, ни через мод, добавляем -runver
+                    arguments.Append($"-runver {settings.RunVersion} ");
+                }
+                // Если -modconfig указан в LaunchParameters, -runver не добавляем (поведение как в оригинальном коде)
+            }
+
+            // Добавляем дополнительные аргументы, переданные в метод (если есть)
+            if (additionalArgs != null)
+            {
+                foreach (var arg in additionalArgs.Where(arg => !string.IsNullOrEmpty(arg)))
+                {
+                    arguments.Append($"\"{arg}\" ");
+                }
+            }
+
+            // Убираем последний лишний пробел, если были добавлены аргументы
+            if (arguments.Length > 0)
+            {
+                arguments.Length--; // Удаляем последний символ (пробел)
+            }
+
+            // Запускаем процесс
             try
             {
-                using var fileStream = new FileStream(
-                    PathConstants.RA3ProfilesFolder + "\\directory.ini",
-                    FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var reader = new StreamReader(fileStream, Encoding.UTF8);
-                firstLine = reader.ReadLine();
-            }
-            catch (IOException ex)
-            {
-                // Обработка исключения ввода-вывода, например, если файл заблокирован
-                Console.WriteLine($"Ошибка чтения файла directory.ini: {ex.Message}");
-                // В реальном приложении используйте логгер
-                return []; // Возвращаем пустой список в случае ошибки
-            }
-
-            if (string.IsNullOrEmpty(firstLine))
-            {
-                // Если файл пуст или первая строка пуста/нулевая
-                return [];
-            }
-
-            string original = ParseDirectoryString(firstLine);
-            string[] directories = Directory.GetDirectories(PathConstants.RA3ProfilesFolder);
-            List<string> profiles = [];
-
-            foreach (string profilePath in directories)
-            {
-                string profileName = Path.GetFileNameWithoutExtension(profilePath);
-                // Проверяем, существует ли профиль в directory.ini
-                if (!string.IsNullOrEmpty(profileName) && original.Contains(profileName))
+                var startInfo = new ProcessStartInfo
                 {
-                    profiles.Add(profileName);
-                }
-            }
-            return profiles;
-        }
+                    FileName = executablePath,
+                    Arguments = arguments.ToString(),
+                    WorkingDirectory = gamePath, // Устанавливаем рабочую директорию в папку игры
+                    UseShellExecute = false // Рекомендуется для передачи аргументов
+                };
 
-        /// <summary>
-        /// Разбирает строку, закодированную EA (похоже на UTF-8), из файла directory.ini.
-        /// Символ '_' обозначает шестнадцатеричное значение следующих двух символов.
-        /// </summary>
-        /// <param name="input">Закодированная строка.</param>
-        /// <returns>Раскодированная строка.</returns>
-        private static string ParseDirectoryString(string input)
-        {
-            if (string.IsNullOrEmpty(input))
+                using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Не удалось запустить процесс игры.");
+            }
+            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
             {
-                return string.Empty;
+                throw new InvalidOperationException($"Ошибка при запуске игры: {ex.Message}", ex);
             }
-
-            var bytes = new List<byte>();
-
-            int i = 0;
-            while (i < input.Length)
-            {
-                char c = input[i];
-                if (c != '_')
-                {
-                    bytes.Add(Convert.ToByte(c));
-                    i++; // Инкремент в обычном случае
-                }
-                else
-                {
-                    // Проверяем, есть ли ещё 2 символа после '_'
-                    if (i + 1 >= input.Length)
-                    {
-                        // Недостаточно символов для парсинга шестнадцатеричного числа (только '_')
-                        break; // Прерываем цикл, если строка некорректна
-                    }
-                    if (i + 2 >= input.Length)
-                    {
-                        // Недостаточно символов для парсинга шестнадцатеричного числа (только '_X')
-                        break; // Прерываем цикл, если строка некорректна
-                    }
-
-                    string hexPair = input.Substring(i + 1, 2);
-                    if (!byte.TryParse(hexPair, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte parsedByte))
-                    {
-                        throw new FormatException($"Некорректное шестнадцатеричное значение: {hexPair}");
-                    }
-
-                    bytes.Add(parsedByte);
-                    i += 3; // Пропускаем '_', 'X', 'Y'
-                }
-            }
-
-            return Encoding.Unicode.GetString([.. bytes]);
         }
     }
 }

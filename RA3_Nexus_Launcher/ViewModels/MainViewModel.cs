@@ -1,14 +1,30 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RA3_Nexus_Launcher.Constants;
+using RA3_Nexus_Launcher.Helpers;
+using RA3_Nexus_Launcher.Managers;
+using RA3_Nexus_Launcher.Models;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace RA3_Nexus_Launcher.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
+    public static string CurrentVersion => $"v{AppInfo.CurrentVersion}";
+    public static string BattleNetIconData => PathIconConstants.BattleNetIconData;
+    public static string DiscordIconData => PathIconConstants.DiscordIconData;
+    public static string GithubIconData => PathIconConstants.GithubIconData;
+    public static string ModDbIconData => PathIconConstants.ModDbIconData;
+    public static string SettingsIconData => PathIconConstants.SettingsIconData;
+    public static List<InstalledModInfo> InstalledMods => InstalledModsManager.InstalledMods;
+
+    [ObservableProperty]
+    private InstalledModInfo? _selectedMod;
+
     [RelayCommand]
     private static void CloseWindow()
     {
@@ -30,6 +46,13 @@ public partial class MainViewModel : ViewModelBase
         return App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
             ? desktop.MainWindow
             : null;
+    }
+
+    [RelayCommand]
+    private void StartGame()
+    {
+        MinimizeWindow();
+        GameHelper.StartGame(SelectedMod);
     }
 
     [RelayCommand]
