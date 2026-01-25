@@ -1,6 +1,9 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.Input;
+using RA3_Nexus_Launcher.Constants;
+using System;
+using System.Diagnostics;
 
 namespace RA3_Nexus_Launcher.ViewModels;
 
@@ -27,5 +30,41 @@ public partial class MainViewModel : ViewModelBase
         return App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
             ? desktop.MainWindow
             : null;
+    }
+
+    [RelayCommand]
+    private static void OpenGithub()
+    {
+        OpenUrl(UrlConstants.GithubUrl);
+    }
+
+    [RelayCommand]
+    private static void OpenDiscordChannel()
+    {
+        OpenUrl(UrlConstants.DiscordUrl);
+    }
+
+    [RelayCommand]
+    private static void OpenModDb()
+    {
+        OpenUrl(UrlConstants.ModDbUrl);
+    }
+
+    /// <summary>
+    /// Открывает указанный URL-адрес в браузере по умолчанию операционной системы.
+    /// </summary>
+    /// <param name="url">URL-адрес для открытия (например, "https://www.example.com").</param>
+    public static void OpenUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            throw new ArgumentException("URL сannot be null or empty.", nameof(url));
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = url,
+            UseShellExecute = true // Важно для открытия URL через системный браузер
+        });
     }
 }

@@ -6,7 +6,7 @@
 		xmlns:views="clr-namespace:RA3_Nexus_Launcher.Views"
 		mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
 		x:Class="RA3_Nexus_Launcher.Views.MainWindow"
-		Icon="/Assets/Launcher-Icon.ico"
+		Icon="/Assets/Launcher_Icon.ico"
 		WindowStartupLocation="CenterOwner"
 		ExtendClientAreaToDecorationsHint="True"
 		ExtendClientAreaChromeHints="NoChrome"

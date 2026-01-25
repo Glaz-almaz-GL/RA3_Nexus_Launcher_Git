@@ -1,10 +1,112 @@
 <Application xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="RA3_Nexus_Launcher.App"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 x:Class="RA3_Nexus_Launcher.App"
+			 xmlns:husk="https://github.com/d3ara1n/Huskui.Avalonia"
+			 RequestedThemeVariant="Dark">
+	<!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
+	<Application.Styles>
+		<FluentTheme />
+
+		<!-- Стиль для кнопок -->
+		<Style Selector="Button.launch">
+			<Setter Property="Template">
+				<ControlTemplate>
+					<ContentPresenter Name="PART_ContentPresenter"
+									  Background="{TemplateBinding Background}"
+									  Foreground="{TemplateBinding Foreground}"
+									  BorderBrush="{TemplateBinding BorderBrush}"
+									  BorderThickness="{TemplateBinding BorderThickness}"
+									  Content="{TemplateBinding Content}"
+									  ContentTemplate="{TemplateBinding ContentTemplate}"
+									  Padding="{TemplateBinding Padding}"
+									  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+									  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+									  CornerRadius="{TemplateBinding CornerRadius}">
+						<ContentPresenter.Transitions>
+							<Transitions>
+								<BrushTransition Property="Background" Duration="0:0:0.2" />
+								<BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+								<BrushTransition Property="Foreground" Duration="0:0:0.2" />
+							</Transitions>
+						</ContentPresenter.Transitions>
+					</ContentPresenter>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+
+		<!-- Стиль для состояния наведения -->
+		<Style Selector="Button.launch:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="#ecc084"/>
+			<Setter Property="BorderBrush" Value="#ecc084"/>
+			<Setter Property="Foreground" Value="Black"/>
+		</Style>
+		<Style Selector="Button.launch:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="#ecc084"/>
+			<Setter Property="BorderBrush" Value="#ecc084"/>
+			<Setter Property="Foreground" Value="Black"/>
+		</Style>
+
+		<!-- Стиль для кнопок -->
+		<Style Selector="Button.menu">
+			<Setter Property="Template">
+				<ControlTemplate>
+					<ContentPresenter Name="PART_ContentPresenter"
+									  Background="{TemplateBinding Background}"
+									  Foreground="{TemplateBinding Foreground}"
+									  BorderBrush="{TemplateBinding BorderBrush}"
+									  BorderThickness="{TemplateBinding BorderThickness}"
+									  Content="{TemplateBinding Content}"
+									  ContentTemplate="{TemplateBinding ContentTemplate}"
+									  Padding="{TemplateBinding Padding}"
+									  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+									  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+									  CornerRadius="{TemplateBinding CornerRadius}">
+						<ContentPresenter.Transitions>
+							<Transitions>
+								<BrushTransition Property="Background" Duration="0:0:0.2" />
+							</Transitions>
+						</ContentPresenter.Transitions>
+					</ContentPresenter>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+
+		<!-- Стиль для состояния наведения -->
+		<Style Selector="Button.menu:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="#80FFFFFF"/>
+			<Setter Property="BorderBrush" Value="#ecc084"/>
+		</Style>
+		<Style Selector="Button.menu.pointerover:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="#80FFFFFF"/>
+			<Setter Property="BorderBrush" Value="#ecc084"/>
+		</Style>
+
+		<Style Selector="Button.window">
+			<Setter Property="Template">
+				<ControlTemplate>
+					<ContentPresenter Name="PART_ContentPresenter"
+									  Background="Transparent"
+									  Foreground="{TemplateBinding Foreground}"
+									  BorderBrush="{TemplateBinding BorderBrush}"
+									  BorderThickness="{TemplateBinding BorderThickness}"
+									  Content="{TemplateBinding Content}"
+									  ContentTemplate="{TemplateBinding ContentTemplate}"
+									  Padding="{TemplateBinding Padding}"
+									  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+									  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+									  CornerRadius="{TemplateBinding CornerRadius}"/>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+
+		<Style Selector="Button.window:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+		<Style Selector="Button.window:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+	</Application.Styles>
 </Application>
