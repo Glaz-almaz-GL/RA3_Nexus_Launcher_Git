@@ -1,9 +1,10 @@
 ﻿using RA3_Nexus_Launcher.Constants;
+using RA3_Nexus_Launcher.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace RA3_Nexus_Launcher.Helpers
@@ -14,10 +15,12 @@ namespace RA3_Nexus_Launcher.Helpers
         /// Получает список доступных профилей игры из папки профилей.
         /// </summary>
         /// <returns>Список имён доступных игровых профилей.</returns>
-        public static List<string> GetProfilesList()
+        public static List<GameProfile> GetProfilesList()
         {
             // Проверяем, существует ли файл directory.ini
-            if (!File.Exists(PathConstants.RA3ProfilesFolder + "\\directory.ini"))
+            string directoryIniPath = Path.Combine(PathConstants.RA3ProfilesFolder, "directory.ini");
+
+            if (!File.Exists(directoryIniPath))
             {
                 // Логично возвращать пустой список, если файл не найден
                 return [];
@@ -27,20 +30,21 @@ namespace RA3_Nexus_Launcher.Helpers
             string? firstLine = null;
             try
             {
-                using var fileStream = new FileStream(
-                    PathConstants.RA3ProfilesFolder + "\\directory.ini",
+                using FileStream fileStream = new(
+                    directoryIniPath,
                     FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var reader = new StreamReader(fileStream, Encoding.UTF8);
+
+                using StreamReader reader = new(fileStream, Encoding.UTF8);
                 firstLine = reader.ReadLine();
             }
             catch (IOException ex)
             {
                 // Обработка исключения ввода-вывода, например, если файл заблокирован
-                Console.WriteLine($"Ошибка чтения файла directory.ini: {ex.Message}");
+                Debug.WriteLine($"Ошибка чтения файла directory.ini: {ex.Message}");
                 return []; // Возвращаем пустой список в случае ошибки
             }
 
-            if (string.IsNullOrEmpty(firstLine))
+            if (string.IsNullOrWhiteSpace(firstLine))
             {
                 // Если файл пуст или первая строка пуста/нулевая
                 return [];
@@ -48,15 +52,18 @@ namespace RA3_Nexus_Launcher.Helpers
 
             string original = ParseDirectoryString(firstLine);
             string[] directories = Directory.GetDirectories(PathConstants.RA3ProfilesFolder);
-            List<string> profiles = [];
+            List<GameProfile> profiles = [];
 
             foreach (string profilePath in directories)
             {
                 string profileName = Path.GetFileNameWithoutExtension(profilePath);
+
                 // Проверяем, существует ли профиль в directory.ini
-                if (!string.IsNullOrEmpty(profileName) && original.Contains(profileName))
+                if (!string.IsNullOrWhiteSpace(profileName) && original.Contains(profileName))
                 {
-                    profiles.Add(profileName);
+                    (string? GameSpyIpAddress, string? IpAddress) = GetProfileIpAddresses(Path.Combine(profilePath, "Options.ini"));
+                    GameProfile profile = new(profileName, profilePath, IpAddress, GameSpyIpAddress);
+                    profiles.Add(profile);
                 }
             }
             return profiles;
@@ -70,12 +77,12 @@ namespace RA3_Nexus_Launcher.Helpers
         /// <returns>Раскодированная строка.</returns>
         private static string ParseDirectoryString(string input)
         {
-            if (string.IsNullOrEmpty(input))
+            if (string.IsNullOrWhiteSpace(input))
             {
                 return string.Empty;
             }
 
-            var bytes = new List<byte>();
+            List<byte> bytes = [];
 
             int i = 0;
             while (i < input.Length)
@@ -120,29 +127,99 @@ namespace RA3_Nexus_Launcher.Helpers
         /// <param name="filePath">Путь к INI-файлу (например, settings.ini).</param>
         /// <param name="gameSpyIpAddress">Новое значение для GameSpyIPAddress.</param>
         /// <param name="ipAddress">Новое значение для IPAddress.</param>
-        public static void UpdateIpAddresses(string filePath, string gameSpyIpAddress, string ipAddress)
+        public static void UpdateProfileIpAddresses(string filePath, string? gameSpyIpAddress, string? ipAddress)
         {
-            if (string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrWhiteSpace(filePath))
             {
                 throw new ArgumentException("Путь к файлу не может быть null или пустым.", nameof(filePath));
             }
 
-            if (string.IsNullOrEmpty(gameSpyIpAddress))
+            if (!File.Exists(filePath))
             {
-                throw new ArgumentException("GameSpyIPAddress не может быть null или пустым.", nameof(gameSpyIpAddress));
+                throw new FileNotFoundException(filePath);
             }
 
-            if (string.IsNullOrEmpty(ipAddress))
+            List<string> lines;
+            try
             {
-                throw new ArgumentException("IPAddress не может быть null или пустым.", nameof(ipAddress));
+                lines = [.. File.ReadAllLines(filePath)];
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidOperationException($"Не удалось прочитать файл {filePath}: {ex.Message}", ex);
+            }
+
+            bool gameSpyShouldBeRemoved = string.IsNullOrWhiteSpace(gameSpyIpAddress) || gameSpyIpAddress == "None";
+            bool ipShouldBeRemoved = string.IsNullOrWhiteSpace(ipAddress) || ipAddress == "None";
+
+            ProcessIniLines(lines, gameSpyShouldBeRemoved, ipShouldBeRemoved, gameSpyIpAddress, ipAddress);
+
+            try
+            {
+                File.WriteAllLines(filePath, lines);
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidOperationException($"Не удалось записать файл {filePath}: {ex.Message}", ex);
+            }
+        }
+
+        private static void ProcessIniLines(List<string> lines, bool gameSpyShouldBeRemoved, bool ipShouldBeRemoved, string? gameSpyIpAddress, string? ipAddress)
+        {
+            (bool gameSpyFound, bool ipFound) = ProcessExistingLines(lines, gameSpyShouldBeRemoved, ipShouldBeRemoved, gameSpyIpAddress, ipAddress);
+
+            if (!gameSpyFound)
+            {
+                string finalGameSpyValue = gameSpyShouldBeRemoved ? "0.0.0.0" : gameSpyIpAddress!;
+                lines.Add($"GameSpyIPAddress = {finalGameSpyValue}");
+            }
+            if (!ipFound)
+            {
+                string finalIpValue = ipShouldBeRemoved ? "0.0.0.0" : ipAddress!;
+                lines.Add($"IPAddress = {finalIpValue}");
+            }
+        }
+
+        private static (bool gameSpyFound, bool ipFound) ProcessExistingLines(List<string> lines, bool gameSpyShouldBeRemoved, bool ipShouldBeRemoved, string? gameSpyIpAddress, string? ipAddress)
+        {
+            bool gameSpyFound = false;
+            bool ipFound = false;
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                string line = lines[i].TrimStart();
+
+                if (line.StartsWith("GameSpyIPAddress =", StringComparison.OrdinalIgnoreCase))
+                {
+                    lines[i] = gameSpyShouldBeRemoved ? "GameSpyIPAddress = 0.0.0.0" : $"GameSpyIPAddress = {gameSpyIpAddress}";
+                    gameSpyFound = true;
+                }
+                else if (line.StartsWith("IPAddress =", StringComparison.OrdinalIgnoreCase))
+                {
+                    lines[i] = ipShouldBeRemoved ? "IPAddress = 0.0.0.0" : $"IPAddress = {ipAddress}";
+                    ipFound = true;
+                }
+            }
+
+            return (gameSpyFound, ipFound);
+        }
+
+        /// <summary>
+        /// Получает текущие значения GameSpyIPAddress и IPAddress из INI-файла.
+        /// </summary>
+        /// <param name="filePath">Путь к INI-файлу (например, settings.ini).</param>
+        /// <returns>Кортеж с текущими значениями (GameSpyIPAddress, IPAddress). Если ключи не найдены, возвращаются null.</returns>
+        public static (string? GameSpyIpAddress, string? IpAddress) GetProfileIpAddresses(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException("Путь к файлу не может быть null или пустым.", nameof(filePath));
             }
 
             // Проверяем, существует ли файл
             if (!File.Exists(filePath))
             {
-                // Если файл не существует, создаём новый с минимальным содержимым
-                File.WriteAllText(filePath, $"GameSpyIPAddress = {gameSpyIpAddress}\nIPAddress = {ipAddress}\n");
-                return;
+                throw new FileNotFoundException($"Файл не найден: {filePath}");
             }
 
             // Читаем все строки из файла
@@ -156,47 +233,91 @@ namespace RA3_Nexus_Launcher.Helpers
                 throw new InvalidOperationException($"Не удалось прочитать файл {filePath}: {ex.Message}", ex);
             }
 
-            bool gameSpyFound = false;
-            bool ipFound = false;
+            string? gameSpyIpAddress = null;
+            string? ipAddress = null;
 
             // Проходим по строкам и ищем нужные ключи
-            for (int i = 0; i < lines.Count; i++)
+            foreach (string line in lines)
             {
-                string line = lines[i];
+                string trimmedLine = line.TrimStart();
 
-                // Проверяем, содержит ли строка ключ (игнорируя пробелы в начале/конце)
-                if (line.TrimStart().StartsWith("GameSpyIPAddress =", StringComparison.OrdinalIgnoreCase))
+                // Проверяем, содержит ли строка ключ GameSpyIPAddress
+                if (trimmedLine.StartsWith("GameSpyIPAddress =", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Заменяем строку на новую с указанным значением
-                    lines[i] = $"GameSpyIPAddress = {gameSpyIpAddress}";
-                    gameSpyFound = true;
+                    // Извлекаем значение после знака равно
+                    int equalsIndex = trimmedLine.IndexOf('=');
+                    if (equalsIndex >= 0)
+                    {
+                        gameSpyIpAddress = trimmedLine[(equalsIndex + 1)..].Trim();
+                    }
                 }
-                else if (line.TrimStart().StartsWith("IPAddress =", StringComparison.OrdinalIgnoreCase))
+                // Проверяем, содержит ли строка ключ IPAddress
+                else if (trimmedLine.StartsWith("IPAddress =", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Заменяем строку на новую с указанным значением
-                    lines[i] = $"IPAddress = {ipAddress}";
-                    ipFound = true;
+                    // Извлекаем значение после знака равно
+                    int equalsIndex = trimmedLine.IndexOf('=');
+                    if (equalsIndex >= 0)
+                    {
+                        ipAddress = trimmedLine[(equalsIndex + 1)..].Trim();
+                    }
                 }
             }
 
-            // Если ключи не были найдены, добавляем их в конец файла
-            if (!gameSpyFound)
+            return (gameSpyIpAddress, ipAddress);
+        }
+
+        public static void CheckAndFixSkirmish()
+        {
+            if (!Directory.Exists(PathConstants.RA3ProfilesFolder))
             {
-                lines.Add($"GameSpyIPAddress = {gameSpyIpAddress}");
-            }
-            if (!ipFound)
-            {
-                lines.Add($"IPAddress = {ipAddress}");
+                return;
             }
 
-            // Записываем изменённый список строк обратно в файл
-            try
+            foreach (string profileFolder in Directory.GetDirectories(PathConstants.RA3ProfilesFolder))
             {
-                File.WriteAllLines(filePath, lines);
-            }
-            catch (IOException ex)
-            {
-                throw new InvalidOperationException($"Не удалось записать файл {filePath}: {ex.Message}", ex);
+                string skirmishIniPath = Path.Combine(profileFolder, "Skirmish.ini");
+
+                if (!File.Exists(skirmishIniPath))
+                {
+                    continue;
+                }
+
+                string[] data = File.ReadAllLines(skirmishIniPath);
+
+                if (data.Length == 0)
+                {
+                    continue;
+                }
+
+                string[] splittedLine = data[0].Split(';');
+                if (splittedLine.Length < 2)
+                {
+                    continue;
+                }
+
+                string playerCode = splittedLine[^2].Split(':')[0];
+
+                if (playerCode != "S=X")
+                {
+                    continue;
+                }
+
+                string profileName = Path.GetFileName(profileFolder);
+                string fixedPlayerCode = $"S=H{profileName},0,0,TT,-1,7,-1,-1,0,1,-1,:X:X:X:X:X:";
+                splittedLine[^2] = fixedPlayerCode;
+
+                StringBuilder sb = new();
+                for (int i = 0; i < splittedLine.Length - 1; i++)
+                {
+                    sb.Append(splittedLine[i]);
+                    if (i < splittedLine.Length - 2)
+                    {
+                        sb.Append(';');
+                    }
+                }
+
+                data[0] = sb.ToString();
+                File.WriteAllLines(skirmishIniPath, data);
             }
         }
     }

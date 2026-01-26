@@ -1,6 +1,7 @@
 ﻿using RA3_Nexus_Launcher.Constants;
 using RA3_Nexus_Launcher.Models;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -19,11 +20,13 @@ namespace RA3_Nexus_Launcher.Managers
         {
             string settingsPath = PathConstants.LauncherSettingsPath;
 
-            if (!Directory.Exists(PathConstants.LauncherFolder) || !File.Exists(settingsPath))
+            if (!Directory.Exists(PathConstants.LauncherSettingsFolder) || !File.Exists(settingsPath))
             {
-                if (!Directory.Exists(PathConstants.LauncherFolder))
+                Debug.Write($"Файл настроек не найден: {settingsPath}");
+
+                if (!Directory.Exists(PathConstants.LauncherSettingsFolder))
                 {
-                    Directory.CreateDirectory(PathConstants.LauncherFolder);
+                    Directory.CreateDirectory(PathConstants.LauncherSettingsFolder);
                 }
 
                 Settings defaultSettings = new();
@@ -40,13 +43,13 @@ namespace RA3_Nexus_Launcher.Managers
             catch (JsonException ex)
             {
                 // Ошибка десериализации (например, файл повреждён)
-                Console.WriteLine($"Ошибка чтения файла настроек: {ex.Message}. Используются настройки по умолчанию.");
+                Debug.WriteLine($"Ошибка чтения файла настроек: {ex.Message}. Используются настройки по умолчанию.");
                 return new Settings();
             }
             catch (IOException ex)
             {
                 // Ошибка ввода-вывода (например, файл заблокирован)
-                Console.WriteLine($"Ошибка доступа к файлу настроек: {ex.Message}. Используются настройки по умолчанию.");
+                Debug.WriteLine($"Ошибка доступа к файлу настроек: {ex.Message}. Используются настройки по умолчанию.");
                 return new Settings();
             }
         }
@@ -56,9 +59,9 @@ namespace RA3_Nexus_Launcher.Managers
             ArgumentNullException.ThrowIfNull(settings);
 
             // Убедимся, что папка существует перед сохранением
-            if (!Directory.Exists(PathConstants.LauncherFolder))
+            if (!Directory.Exists(PathConstants.LauncherSettingsFolder))
             {
-                Directory.CreateDirectory(PathConstants.LauncherFolder);
+                Directory.CreateDirectory(PathConstants.LauncherSettingsFolder);
             }
 
             try
@@ -69,7 +72,7 @@ namespace RA3_Nexus_Launcher.Managers
             catch (IOException ex)
             {
                 // Ошибка ввода-вывода (например, нет прав на запись)
-                Console.WriteLine($"Ошибка сохранения файла настроек: {ex.Message}");
+                Debug.WriteLine($"Ошибка сохранения файла настроек: {ex.Message}");
                 throw;
             }
         }

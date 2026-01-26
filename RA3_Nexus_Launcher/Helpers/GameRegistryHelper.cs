@@ -11,7 +11,7 @@ namespace RA3_Nexus_Launcher.Helpers
     /// Предоставляет вспомогательные методы для работы с записями реестра Red Alert 3.
     /// </summary>
 #pragma warning disable CA1416 // Проверка совместимости платформы
-    public static class RegistryHelper
+    public static class GameRegistryHelper
     {
         // Константы для уменьшения дублирования строк
         private const string RA3_REGISTRY_PATH = @"Software\Electronic Arts\Electronic Arts\Red Alert 3";
@@ -32,11 +32,6 @@ namespace RA3_Nexus_Launcher.Helpers
         }
 
         /// <summary>
-        /// Получает текущее состояние реестра RA3.
-        /// </summary>
-        public static RegistryStatus Status => IsRegistryValid();
-
-        /// <summary>
         /// Проверяет, все ли необходимые записи в реестре RA3 присутствуют и корректны.
         /// Использует представление RegistryView.Registry32 для доступа к WOW6432Node.
         /// </summary>
@@ -46,8 +41,8 @@ namespace RA3_Nexus_Launcher.Helpers
             Debug.WriteLine("Начинается проверка реестра RA3 (представление 32-бит)...");
 
             // Используем RegistryView.Registry32 для доступа к WOW6432Node
-            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            using var key32 = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: false);
+            using RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+            using RegistryKey? key32 = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: false);
 
             if (key32 == null)
             {
@@ -56,7 +51,7 @@ namespace RA3_Nexus_Launcher.Helpers
             }
             Debug.WriteLine($"Ключ реестра HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH} найден.");
 
-            var installDirValue = key32.GetValue(INSTALL_DIR_VALUE_NAME);
+            object? installDirValue = key32.GetValue(INSTALL_DIR_VALUE_NAME);
             if (installDirValue == null)
             {
                 Debug.WriteLine($"Значение '{INSTALL_DIR_VALUE_NAME}' в ключе HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH} отсутствует.");
@@ -64,7 +59,7 @@ namespace RA3_Nexus_Launcher.Helpers
             }
             Debug.WriteLine($"Значение '{INSTALL_DIR_VALUE_NAME}' в ключе HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH} найдено: {installDirValue}");
 
-            var mapSyncValue = key32.GetValue(USE_LOCAL_USER_MAP_VALUE_NAME);
+            object? mapSyncValue = key32.GetValue(USE_LOCAL_USER_MAP_VALUE_NAME);
             if (mapSyncValue == null)
             {
                 Debug.WriteLine($"Значение '{USE_LOCAL_USER_MAP_VALUE_NAME}' в ключе HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH} отсутствует.");
@@ -79,8 +74,8 @@ namespace RA3_Nexus_Launcher.Helpers
             Debug.WriteLine($"Значение '{USE_LOCAL_USER_MAP_VALUE_NAME}' в ключе HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH} корректно (равно 0).");
 
             // Для пользовательских ключей RegistryView обычно не требуется, используем Registry.CurrentUser
-            using var userBaseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default); // Default безопасен для CurrentUser
-            using var userKey = userBaseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: false);
+            using RegistryKey userBaseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default); // Default безопасен для CurrentUser
+            using RegistryKey? userKey = userBaseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: false);
 
             if (userKey == null)
             {
@@ -89,7 +84,7 @@ namespace RA3_Nexus_Launcher.Helpers
             }
             Debug.WriteLine($"Ключ реестра HKEY_CURRENT_USER\\{RA3_REGISTRY_PATH} найден.");
 
-            var languageValue = userKey.GetValue(LANGUAGE_VALUE_NAME);
+            object? languageValue = userKey.GetValue(LANGUAGE_VALUE_NAME);
             if (languageValue == null)
             {
                 Debug.WriteLine($"Значение '{LANGUAGE_VALUE_NAME}' в ключе HKEY_CURRENT_USER\\{RA3_REGISTRY_PATH} отсутствует.");
@@ -108,7 +103,7 @@ namespace RA3_Nexus_Launcher.Helpers
         /// <returns>Путь к папке установки или пустая строка, если путь не найден или не удалось исправить статус.</returns>
         public static string GetRA3Path()
         {
-            var status = IsRegistryValid();
+            RegistryStatus status = IsRegistryValid();
             Debug.WriteLine($"Первоначальный статус реестра: {status}");
 
             // Проверяем, нуждается ли статус в исправлении перед попыткой получения пути
@@ -137,9 +132,9 @@ namespace RA3_Nexus_Launcher.Helpers
             if (status == RegistryStatus.Correct)
             {
                 // Повторно открываем ключ, так как EnableMapSync мог его изменить
-                using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-                using var key = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: false);
-                var pathValue = key?.GetValue(INSTALL_DIR_VALUE_NAME) as string;
+                using RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+                using RegistryKey? key = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: false);
+                string? pathValue = key?.GetValue(INSTALL_DIR_VALUE_NAME) as string;
                 Debug.WriteLine($"Получен путь из реестра: {pathValue ?? "(null или пустой)"}");
                 return pathValue ?? string.Empty;
             }
@@ -152,18 +147,18 @@ namespace RA3_Nexus_Launcher.Helpers
 
         public static void SetRA3Path(string path)
         {
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrWhiteSpace(path))
             {
                 throw new ArgumentException("Путь к игре не может быть null или пустым.", nameof(path));
             }
 
-            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            using var subKey = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
+            using RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+            using RegistryKey? subKey = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
 
             if (subKey == null)
             {
                 // Ключ не существует, создаем его
-                using var newSubKey = baseKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true) ?? throw new InvalidOperationException($"Не удалось создать ключ реестра '{RA3_REGISTRY_PATH}' в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node.");
+                using RegistryKey newSubKey = baseKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true) ?? throw new InvalidOperationException($"Не удалось создать ключ реестра '{RA3_REGISTRY_PATH}' в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node.");
                 newSubKey.SetValue(INSTALL_DIR_VALUE_NAME, path, RegistryValueKind.String);
                 Debug.WriteLine($"Значение '{INSTALL_DIR_VALUE_NAME}' установлено в '{path}' в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH}");
             }
@@ -175,9 +170,9 @@ namespace RA3_Nexus_Launcher.Helpers
             }
         }
 
-        public static bool SetLanguage(string gamePath, string language)
+        public static bool SetLanguage(string gameFolderPath, string language)
         {
-            if (string.IsNullOrEmpty(gamePath) || string.IsNullOrEmpty(language))
+            if (string.IsNullOrWhiteSpace(gameFolderPath) || string.IsNullOrWhiteSpace(language))
             {
                 return false; // Некорректные входные данные
             }
@@ -185,18 +180,14 @@ namespace RA3_Nexus_Launcher.Helpers
             try
             {
                 // Проверяем, содержит ли папка игры хотя бы один .skudef файл
-                var isPathValid = Directory.EnumerateFiles(gamePath, "*.skudef").Any();
+                bool isPathValid = Directory.EnumerateFiles(gameFolderPath, "*.skudef").Any();
                 if (!isPathValid)
                 {
                     return false;
                 }
 
-                // Внутренние функции для формирования путей
-                string GetCsfPath(string lang) => Path.Combine(gamePath, "Launcher", $"{lang}.csf");
-                string GetSkudefPath(string lang, string version) => Path.Combine(gamePath, $"RA3_{lang}_{version}.skudef");
-
                 // Проверяем наличие файлов для указанного языка
-                bool languageFilesExist = File.Exists(GetSkudefPath(language, "1.12")) && File.Exists(GetCsfPath(language));
+                bool languageFilesExist = File.Exists(GetSkudefPath(gameFolderPath, language, "1.12")) && File.Exists(GetCsfPath(gameFolderPath, language));
 
                 // Если файлы указанного языка не найдены, пробуем английский как fallback
                 string? finalLanguage;
@@ -204,7 +195,7 @@ namespace RA3_Nexus_Launcher.Helpers
                 {
                     finalLanguage = language;
                 }
-                else if (File.Exists(GetSkudefPath("english", "1.12")) && File.Exists(GetCsfPath("english")))
+                else if (File.Exists(GetSkudefPath(gameFolderPath, "english", "1.12")) && File.Exists(GetCsfPath(gameFolderPath, "english")))
                 {
                     finalLanguage = "english";
                 }
@@ -220,13 +211,13 @@ namespace RA3_Nexus_Launcher.Helpers
                 }
 
                 // Устанавливаем язык в реестре (CurrentUser)
-                using var baseUserKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
-                using var userSubKey = baseUserKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
+                using RegistryKey baseUserKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+                using RegistryKey? userSubKey = baseUserKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
 
                 if (userSubKey == null)
                 {
                     // Ключ не существует, создаем его
-                    using var newUserSubKey = baseUserKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true);
+                    using RegistryKey newUserSubKey = baseUserKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true);
                     if (newUserSubKey == null)
                     {
                         // Не удалось создать ключ
@@ -252,40 +243,135 @@ namespace RA3_Nexus_Launcher.Helpers
             }
         }
 
+        public static string? GetLanguage(string gameFolderPath)
+        {
+            if (string.IsNullOrWhiteSpace(gameFolderPath))
+            {
+                return null; // Некорректные входные данные
+            }
+
+            try
+            {
+                // Проверяем, содержит ли папка игры хотя бы один .skudef файл
+                bool isPathValid = Directory.EnumerateFiles(gameFolderPath, "*.skudef").Any();
+                if (!isPathValid)
+                {
+                    return null;
+                }
+
+                // Читаем значение языка из реестра (CurrentUser)
+                using RegistryKey baseUserKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+                using RegistryKey? userSubKey = baseUserKey.OpenSubKey(RA3_REGISTRY_PATH, writable: false);
+
+                if (userSubKey == null)
+                {
+                    // Ключ не существует, возвращаем null
+                    return null;
+                }
+
+                object? registryValue = userSubKey.GetValue(LANGUAGE_VALUE_NAME);
+                string? currentLanguage = registryValue?.ToString();
+
+                if (string.IsNullOrWhiteSpace(currentLanguage))
+                {
+                    // Значение языка не установлено или пустое
+                    return null;
+                }
+
+                // Проверяем, существуют ли файлы для текущего языка
+                bool languageFilesExist = File.Exists(GetSkudefPath(gameFolderPath, currentLanguage, "1.12")) && File.Exists(GetCsfPath(gameFolderPath, currentLanguage));
+
+                if (!languageFilesExist)
+                {
+                    // Если файлы для текущего языка не найдены, проверяем английский как fallback
+                    if (File.Exists(GetSkudefPath(gameFolderPath, "english", "1.12")) && File.Exists(GetCsfPath(gameFolderPath, "english")))
+                    {
+                        // Файлы английского языка существуют, но текущий язык в реестре не найден
+                        // Можно вернуть null или английский в зависимости от логики
+                        // Здесь возвращаем null, так как установленный в реестре язык недоступен
+                        return null;
+                    }
+                    else
+                    {
+                        // Ни текущий язык, ни английский не доступны
+                        return null;
+                    }
+                }
+
+                return currentLanguage;
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or SecurityException or IOException)
+            {
+                Debug.WriteLine($"Ошибка при получении языка из реестра: {ex.Message}");
+                return null; // Возвращаем null в случае ошибки доступа или ввода-вывода
+            }
+        }
+
+        private static string GetCsfPath(string gamePath, string lang)
+        {
+            return Path.Combine(gamePath, "Launcher", $"{lang}.csf");
+        }
+
+        private static string GetSkudefPath(string gamePath, string lang, string version)
+        {
+            return Path.Combine(gamePath, $"RA3_{lang}_{version}.skudef");
+        }
+
         public static void EnableMaps()
         {
-            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            using var subKey = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
+            try
+            {
+                using RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
 
-            if (subKey == null)
-            {
-                // Ключ не существует, создаем его
-                using var newSubKey = baseKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true) ?? throw new InvalidOperationException($"Не удалось создать ключ реестра '{RA3_REGISTRY_PATH}' в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node.");
-                newSubKey.SetValue(USE_LOCAL_USER_MAP_VALUE_NAME, 0, RegistryValueKind.DWord);
-                Debug.WriteLine($"Значение '{USE_LOCAL_USER_MAP_VALUE_NAME}' установлено в 0 в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH}");
+                RegistryKey? subKey = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
+
+                if (subKey == null)
+                {
+                    // Ключ не существует, создаем его
+                    subKey = baseKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true) ?? throw new InvalidOperationException($"Не удалось создать ключ реестра '{RA3_REGISTRY_PATH}' в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node.");
+
+                    subKey.SetValue(USE_LOCAL_USER_MAP_VALUE_NAME, 0, RegistryValueKind.DWord);
+                    Debug.WriteLine($"Значение '{USE_LOCAL_USER_MAP_VALUE_NAME}' установлено в 0 в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH}");
+                }
+                else
+                {
+                    // Ключ существует, устанавливаем значение
+                    subKey.SetValue(USE_LOCAL_USER_MAP_VALUE_NAME, 0, RegistryValueKind.DWord);
+                    Debug.WriteLine($"Значение '{USE_LOCAL_USER_MAP_VALUE_NAME}' обновлено на 0 в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH}");
+                }
             }
-            else
+            catch (UnauthorizedAccessException)
             {
-                // Ключ существует, устанавливаем значение
-                subKey.SetValue(USE_LOCAL_USER_MAP_VALUE_NAME, 0, RegistryValueKind.DWord);
-                Debug.WriteLine($"Значение '{USE_LOCAL_USER_MAP_VALUE_NAME}' обновлено на 0 в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH}");
+                ProcessStartInfo process = new()
+                {
+                    FileName = Environment.ProcessPath!,
+                    UseShellExecute = true,
+                    Verb = "runas"
+                };
+
+                Process.Start(process);
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Произошла ошибка при работе с реестром: {ex.Message}", ex);
             }
         }
 
         public static void ResetRegistry(string path)
         {
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrWhiteSpace(path))
             {
                 throw new ArgumentException("Путь к игре не может быть null или пустым.", nameof(path));
             }
 
-            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            using var subKey = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
+            using RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+            using RegistryKey? subKey = baseKey.OpenSubKey(RA3_REGISTRY_PATH, writable: true);
 
             if (subKey == null)
             {
                 // Ключ не существует, создаем его
-                using var newSubKey = baseKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true) ?? throw new InvalidOperationException($"Не удалось создать ключ реестра '{RA3_REGISTRY_PATH}' в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node.");
+                using RegistryKey newSubKey = baseKey.CreateSubKey(RA3_REGISTRY_PATH, writable: true) ?? throw new InvalidOperationException($"Не удалось создать ключ реестра '{RA3_REGISTRY_PATH}' в HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node.");
                 newSubKey.SetValue(INSTALL_DIR_VALUE_NAME, path, RegistryValueKind.String);
                 newSubKey.SetValue(USE_LOCAL_USER_MAP_VALUE_NAME, 0, RegistryValueKind.DWord);
                 Debug.WriteLine($"Ключ HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\{RA3_REGISTRY_PATH} создан с параметрами Install Dir='{path}', UseLocalUserMap=0");

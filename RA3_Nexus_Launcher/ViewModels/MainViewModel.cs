@@ -6,12 +6,14 @@ using RA3_Nexus_Launcher.Constants;
 using RA3_Nexus_Launcher.Helpers;
 using RA3_Nexus_Launcher.Managers;
 using RA3_Nexus_Launcher.Models;
+using RA3_Nexus_Launcher.Views;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Principal;
 
 namespace RA3_Nexus_Launcher.ViewModels;
-
+#pragma warning disable CA1416 // Проверка совместимости платформы
 public partial class MainViewModel : ViewModelBase
 {
     public static string CurrentVersion => $"v{AppInfo.CurrentVersion}";
@@ -21,6 +23,7 @@ public partial class MainViewModel : ViewModelBase
     public static string ModDbIconData => PathIconConstants.ModDbIconData;
     public static string SettingsIconData => PathIconConstants.SettingsIconData;
     public static List<InstalledModInfo> InstalledMods => InstalledModsManager.InstalledMods;
+    public static bool IsAdministratorMode => IsAdministrator();
 
     [ObservableProperty]
     private InstalledModInfo? _selectedMod;
@@ -40,6 +43,12 @@ public partial class MainViewModel : ViewModelBase
         window?.WindowState = WindowState.Minimized;
     }
 
+    [RelayCommand]
+    private void RemoveSelectedMod()
+    {
+        SelectedMod = null;
+    }
+
     private static Window? GetThisWindow()
     {
         // Получаем активное окно (может не работать корректно, если открыто несколько окон)
@@ -56,38 +65,53 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private static void OpenSettings()
+    {
+        Window? window = GetThisWindow();
+
+
+        if (window != null)
+        {
+            new SettingsView().ShowDialog(window);
+        }
+    }
+
+    [RelayCommand]
+    private void StartBattleNet()
+    {
+        // TODO: Добавить функцию запуска RA3 BattleNet или убрать её
+    }
+
+    [RelayCommand]
     private static void OpenGithub()
     {
-        OpenUrl(UrlConstants.GithubUrl);
+        UrlHelper.OpenUrl(UrlConstants.GithubUrl);
     }
 
     [RelayCommand]
     private static void OpenDiscordChannel()
     {
-        OpenUrl(UrlConstants.DiscordUrl);
+        UrlHelper.OpenUrl(UrlConstants.DiscordUrl);
     }
 
     [RelayCommand]
     private static void OpenModDb()
     {
-        OpenUrl(UrlConstants.ModDbUrl);
+        UrlHelper.OpenUrl(UrlConstants.ModDbUrl);
     }
 
-    /// <summary>
-    /// Открывает указанный URL-адрес в браузере по умолчанию операционной системы.
-    /// </summary>
-    /// <param name="url">URL-адрес для открытия (например, "https://www.example.com").</param>
-    public static void OpenUrl(string url)
+    public static bool IsAdministrator()
     {
-        if (string.IsNullOrWhiteSpace(url))
+        try
         {
-            throw new ArgumentException("URL сannot be null or empty.", nameof(url));
+            var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
-
-        Process.Start(new ProcessStartInfo
+        catch
         {
-            FileName = url,
-            UseShellExecute = true // Важно для открытия URL через системный браузер
-        });
+            return false;
+        }
     }
 }
+#pragma warning restore CA1416 // Проверка совместимости платформы

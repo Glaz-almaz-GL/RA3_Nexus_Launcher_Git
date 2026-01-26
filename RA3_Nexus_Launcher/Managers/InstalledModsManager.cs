@@ -1,10 +1,8 @@
 ﻿using RA3_Nexus_Launcher.Constants;
 using RA3_Nexus_Launcher.Models;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RA3_Nexus_Launcher.Managers
@@ -17,30 +15,37 @@ namespace RA3_Nexus_Launcher.Managers
         {
             List<InstalledModInfo> mods = [];
 
-            if (Directory.Exists(PathConstants.RA3ModFolder))
+            if (!Directory.Exists(PathConstants.RA3ModFolder))
             {
-                foreach (string modPath in Directory.GetDirectories(PathConstants.RA3ModFolder))
-                {
-                    string[]? skudefFiles = Directory.GetFiles(modPath, "*.skudef");
+                return mods;
+            }
 
-                    if (skudefFiles?.Length > 0)
-                    {
-                        foreach (var skudef in skudefFiles.Where(skudef => !string.IsNullOrWhiteSpace(skudef)))
-                        {
-                            (string Name, string Version) = ParseFileName(Path.GetFileNameWithoutExtension(skudef));
+            string[] modPaths = Directory.GetDirectories(PathConstants.RA3ModFolder);
 
-                            if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Version))
-                            {
-                                continue;
-                            }
-
-                            mods.Add(new(Name, Version, skudef));
-                        }
-                    }
-                }
+            foreach (string modPath in modPaths)
+            {
+                ProcessModDirectory(modPath, mods);
             }
 
             return mods;
+        }
+
+        private static void ProcessModDirectory(string modPath, List<InstalledModInfo> mods)
+        {
+            string[]? skudefFiles = Directory.GetFiles(modPath, "*.skudef");
+
+            if (skudefFiles?.Length != 0)
+            {
+                foreach (string? skudef in skudefFiles!.Where(skudef => !string.IsNullOrWhiteSpace(skudef)))
+                {
+                    (string Name, string Version) = ParseFileName(Path.GetFileNameWithoutExtension(skudef));
+
+                    if (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Version))
+                    {
+                        mods.Add(new(Name, Version, skudef));
+                    }
+                }
+            }
         }
 
         private static (string Name, string Version) ParseFileName(string fileNameWithoutExtension)

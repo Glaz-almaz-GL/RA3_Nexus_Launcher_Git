@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -30,7 +30,7 @@ namespace RA3_Nexus_Launcher.Helpers
             catch (NetworkInformationException ex)
             {
                 // Обработка ошибок, связанных с получением информации о сетевых интерфейсах
-                Console.WriteLine($"Ошибка получения сетевых интерфейсов: {ex.Message}");
+                Debug.WriteLine($"Ошибка получения сетевых интерфейсов: {ex.Message}");
                 return [];
             }
         }
