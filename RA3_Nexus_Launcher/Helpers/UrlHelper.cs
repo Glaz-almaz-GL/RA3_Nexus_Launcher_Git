@@ -15,7 +15,7 @@ namespace RA3_Nexus_Launcher.Helpers
         {
             if (string.IsNullOrWhiteSpace(url))
             {
-                throw new ArgumentException("URL сannot be null or empty.", nameof(url));
+                NotificationHelpers.ShowError("URL сannot be null or empty.", nameof(url), TimeSpan.FromSeconds(5));
             }
 
             Process.Start(new ProcessStartInfo

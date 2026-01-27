@@ -6,7 +6,7 @@ using Avalonia;
 
 namespace RA3_Nexus_Launcher.Desktop;
 
-class Program
+static class Program
 {
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
@@ -15,11 +15,11 @@ class Program
     public static int Main(string[] args)
     {
         var builder = BuildAvaloniaApp();
-        if(args.Contains("--drm"))
+        if (args.Contains("--drm"))
         {
             SilenceConsole();
-                
-            // If Card0, Card1 and Card2 all don't work. You can also try:                 
+
+            // If Card0, Card1 and Card2 all don't work. You can also try:
             // return builder.StartLinuxFbDev(args);
             // return builder.StartLinuxDrm(args, "/dev/dri/card1");
             return builder.StartLinuxDrm(args, "/dev/dri/card1", 1D);
@@ -42,9 +42,9 @@ class Program
         new Thread(() =>
             {
                 Console.CursorVisible = false;
-                while(true)
+                while (true)
                     Console.ReadKey(true);
             })
-            { IsBackground = true }.Start();
+        { IsBackground = true }.Start();
     }
 }

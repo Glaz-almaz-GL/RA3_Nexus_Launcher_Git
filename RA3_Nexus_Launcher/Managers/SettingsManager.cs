@@ -1,4 +1,5 @@
 ﻿using RA3_Nexus_Launcher.Constants;
+using RA3_Nexus_Launcher.Helpers;
 using RA3_Nexus_Launcher.Models;
 using System;
 using System.Diagnostics;
@@ -9,56 +10,55 @@ namespace RA3_Nexus_Launcher.Managers
 {
     public static class SettingsManager
     {
-        public static Settings CurrentSettings { get; private set; } = LoadSettings();
+        public static LauncherSettings CurrentSettings { get; private set; } = LoadSettings();
 
-        private static readonly JsonSerializerOptions _jsonOptions = new()
+        private static JsonSerializerOptions? _jsonOptions; // Сделали nullable
+
+        private static JsonSerializerOptions GetJsonOptions() // Метод для получения/инициализации
         {
-            WriteIndented = true
-        };
+            return _jsonOptions ??= new JsonSerializerOptions { WriteIndented = true };
+        }
 
-        public static Settings LoadSettings()
+        public static LauncherSettings LoadSettings()
         {
             string settingsPath = PathConstants.LauncherSettingsPath;
 
             if (!Directory.Exists(PathConstants.LauncherSettingsFolder) || !File.Exists(settingsPath))
             {
-                Debug.Write($"Файл настроек не найден: {settingsPath}");
+                Debug.Write($"Settings file not found: {settingsPath}");
 
                 if (!Directory.Exists(PathConstants.LauncherSettingsFolder))
                 {
                     Directory.CreateDirectory(PathConstants.LauncherSettingsFolder);
                 }
 
-                Settings defaultSettings = new();
-                SaveSettings(defaultSettings);
+                LauncherSettings defaultSettings = new();
+                SaveSettings(defaultSettings); // Теперь вызовет GetJsonOptions()
                 return defaultSettings;
             }
 
             try
             {
                 string json = File.ReadAllText(settingsPath);
-                Settings? loadedSettings = JsonSerializer.Deserialize<Settings>(json, _jsonOptions);
-                return loadedSettings ?? new Settings();
+                LauncherSettings? loadedSettings = JsonSerializer.Deserialize<LauncherSettings>(json, GetJsonOptions()); // Используем метод
+                return loadedSettings ?? new LauncherSettings();
             }
             catch (JsonException ex)
             {
-                // Ошибка десериализации (например, файл повреждён)
-                Debug.WriteLine($"Ошибка чтения файла настроек: {ex.Message}. Используются настройки по умолчанию.");
-                return new Settings();
+                NotificationHelpers.ShowError("Error reading settings file. Default settings are being used.", $"{ex.Message} {ex.InnerException}", TimeSpan.FromSeconds(5));
+                return new LauncherSettings();
             }
             catch (IOException ex)
             {
-                // Ошибка ввода-вывода (например, файл заблокирован)
-                Debug.WriteLine($"Ошибка доступа к файлу настроек: {ex.Message}. Используются настройки по умолчанию.");
-                return new Settings();
+                NotificationHelpers.ShowError("Error accessing settings file. Default settings are being used.", $"{ex.Message} {ex.InnerException}", TimeSpan.FromSeconds(5));
+                return new LauncherSettings();
             }
         }
 
-        public static void SaveSettings(Settings settings)
+        public static void SaveSettings(LauncherSettings settings)
         {
             ArgumentNullException.ThrowIfNull(settings);
 
-            // Убедимся, что папка существует перед сохранением
             if (!Directory.Exists(PathConstants.LauncherSettingsFolder))
             {
                 Directory.CreateDirectory(PathConstants.LauncherSettingsFolder);
@@ -66,13 +66,13 @@ namespace RA3_Nexus_Launcher.Managers
 
             try
             {
-                string json = JsonSerializer.Serialize(settings, _jsonOptions);
+                // Используем метод для получения инициализированного экземпляра
+                string json = JsonSerializer.Serialize(settings, GetJsonOptions());
                 File.WriteAllText(PathConstants.LauncherSettingsPath, json);
             }
             catch (IOException ex)
             {
-                // Ошибка ввода-вывода (например, нет прав на запись)
-                Debug.WriteLine($"Ошибка сохранения файла настроек: {ex.Message}");
+                NotificationHelpers.ShowError("Error saving settings file", $"{ex.Message} {ex.InnerException}", TimeSpan.FromSeconds(5));
                 throw;
             }
         }

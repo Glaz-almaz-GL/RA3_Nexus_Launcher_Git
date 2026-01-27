@@ -4,9 +4,11 @@ namespace RA3_Nexus_Launcher.Managers
 {
     public static class GamePatchesManager
     {
-        public static void GenerateNewCDKey()
+        public static string GenerateNewCDKey()
         {
-            CDKeyHelper.ApplyCDKey(CDKeyHelper.GenerateCDKey());
+            string cdKey = CDKeyHelper.GenerateCDKey();
+            CDKeyHelper.ApplyCDKey(cdKey);
+            return cdKey;
         }
 
         public static void InstallFourGBPatch()

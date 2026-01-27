@@ -1,9 +1,16 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading; // Добавьте этот using
+using Huskui.Avalonia.Controls; // Если используется
+using RA3_Nexus_Launcher.Constants;
 using RA3_Nexus_Launcher.Helpers;
 using RA3_Nexus_Launcher.Managers;
+using RA3_Nexus_Launcher.ViewModels;
 using System;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RA3_Nexus_Launcher.Views;
 
@@ -11,9 +18,29 @@ public partial class MainWindow : Window
 {
     public MainWindow()
     {
+        var mainViewModel = new MainViewModel(this);
+        DataContext = mainViewModel;
+
         InitializeComponent();
         DialogsManager.Initialize(this);
-        GameProfilesHelper.CheckAndFixSkirmish();
+        NotificationHelpers.SetNotificationManager(this);
+        SkirmishFixer.CheckAndFixSkirmish();
+
+        // Запускаем InitializeAsync в контексте UI-потока
+        Dispatcher.UIThread.InvokeAsync(mainViewModel.InitializeAsync, DispatcherPriority.Background);
+        if (!SettingsManager.CurrentSettings.IsQuickLoaderUsed)
+        {
+            try
+            {
+                File.Copy(PathConstants.RA3QuickLoader, SettingsManager.CurrentSettings.GamePath, true);
+                SettingsManager.CurrentSettings.IsQuickLoaderUsed = true;
+                SettingsManager.SaveCurrentSettings();
+            }
+            catch (Exception ex)
+            {
+                NotificationHelpers.ShowError("Error applying QuickLoader to the game", $"{ex.Message} {ex.InnerException}", TimeSpan.FromSeconds(5));
+            }
+        }
     }
 
     private void OnPointerPressed(object sender, PointerPressedEventArgs e)
@@ -42,11 +69,11 @@ public partial class MainWindow : Window
 
         // Список типов контролов, которые обычно обрабатывают клики сами
         // Можно расширить по необходимости
-        Type[] interactiveTypes = new[]
-        {
+        Type[] interactiveTypes =
+        [
             typeof(Button),
             typeof(ComboBox),
-        };
+        ];
 
         Control? currentControl = control;
         while (currentControl != null)

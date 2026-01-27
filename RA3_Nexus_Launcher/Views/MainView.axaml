@@ -25,14 +25,16 @@
 						   FontSize="20"
 						   Foreground="#f0f0f0"
 						   HorizontalAlignment="Left"
-						   VerticalAlignment="Center"/>
+						   VerticalAlignment="Center"
+						   ToolTip.Tip="{Binding Name, StringFormat='Mod: {0}'}"/>
 				<TextBlock Grid.Column="1"
 						   Text="{Binding Version}"
 						   FontFamily="avares://RA3_Nexus_Launcher/Assets/Fonts/#Hacen Tunisia"
 						   FontSize="20"
 						   Foreground="#f0f0f0"
 						   HorizontalAlignment="Right"
-						   VerticalAlignment="Center"/>
+						   VerticalAlignment="Center"
+						   ToolTip.Tip="{Binding Version, StringFormat='Version: {0}'}"/>
 			</Grid>
 		</DataTemplate>
 	</UserControl.Resources>
@@ -43,7 +45,8 @@
 					HorizontalAlignment="Right"
 					VerticalAlignment="Top"
 					FlowDirection="RightToLeft"
-					Spacing="4">
+					Spacing="4"
+					ToolTip.Tip="Window control buttons.">
 
 			<Button	Foreground="Black"
 					Classes="window"
@@ -54,7 +57,8 @@
 					Command="{Binding CloseWindowCommand}"
 					HorizontalAlignment="Right"
 					VerticalAlignment="Top"
-					Content="✕"/>
+					Content="✕"
+					ToolTip.Tip="Close the launcher application."/>
 
 			<Button Margin="0.75,0,0,0"
 					Foreground="Black"
@@ -66,21 +70,24 @@
 					Command="{Binding MinimizeWindowCommand}"
 					HorizontalAlignment="Right"
 					VerticalAlignment="Top"
-					Content="—"/>
+					Content="—"
+					ToolTip.Tip="Minimize the launcher window."/>
 
 			<TextBlock Text="Administrator Mode"
 					   FontSize="28"
 					   Foreground="#c59f68"
 					   IsVisible="{Binding IsAdministratorMode}"
 					   FontFamily="avares://RA3_Nexus_Launcher/Assets/Fonts/#Hacen Tunisia"
-					   Margin="-10,60,0,0"/>
+					   Margin="-10,60,0,0"
+					   ToolTip.Tip="Launcher is running with elevated administrator privileges."/>
 		</StackPanel>
 
 		<Grid Grid.Row="2"
 			  ColumnDefinitions="Auto,250,Auto"
 			  RowDefinitions="Auto, Auto"
 			  HorizontalAlignment="Center"
-			  Margin="0,0,0,40">
+			  Margin="0,0,0,40"
+			  ToolTip.Tip="Main action area for launching the game and managing mods.">
 
 			<Button Grid.Column="0" Grid.Row="0"
 					Name="btnBattleNet"
@@ -90,7 +97,8 @@
 					BorderThickness="1"
 					BorderBrush="#ecc084"
 					Command="{Binding StartBattleNetCommand}"
-					ToolTip.Tip="Start RA3BattleNet">
+					IsEnabled="{Binding IsBattleNetAvailable}"
+					ToolTip.Tip="Start RA3BattleNet (if installed)">
 				<Canvas Width="35" Height="35">
 					<Canvas.RenderTransform>
 						<ScaleTransform ScaleX="1" ScaleY="-1" />
@@ -118,7 +126,8 @@
 					HorizontalContentAlignment="Center"
 					BorderThickness="1"
 					Foreground="#edd0a6"
-					BorderBrush="#ecc084"/>
+					BorderBrush="#ecc084"
+					ToolTip.Tip="Start the game with the currently selected version and mod." />
 
 			<ComboBox Grid.Column="1" Grid.Row="1"
 					  Name="cmbModList"
@@ -135,7 +144,8 @@
 					  IsVisible="True"
 					  ItemsSource="{Binding InstalledMods}"
 					  SelectedItem="{Binding SelectedMod}"
-					  ItemTemplate="{StaticResource InstalledModTemplate}"/>
+					  ItemTemplate="{StaticResource InstalledModTemplate}"
+					  ToolTip.Tip="Select a mod to play. The list shows mods found in the configured mod directory." />
 
 			<Button Grid.Column="2" Grid.Row="1"
 					Name="btnRemoveMode"
@@ -153,7 +163,7 @@
 					FontSize="16"
 					Foreground="#ecc084"
 					Content="✕"
-					ToolTip.Tip="Deselect Mode"/>
+					ToolTip.Tip="Deselect the currently selected mod."/>
 
 			<Button Grid.Column="2" Grid.Row="0"
 					Name="btnSettings"
@@ -163,7 +173,7 @@
 					BorderThickness="1"
 					BorderBrush="#ecc084"
 					Command="{Binding OpenSettingsCommand}"
-					ToolTip.Tip="Settings">
+					ToolTip.Tip="Open the settings window to configure the launcher.">
 				<PathIcon Width="30"
 						  Height="30"
 						  VerticalAlignment="Center"
@@ -180,20 +190,22 @@
 				   Foreground="#ecc084"
 				   Margin="0,0,96,25"
 				   HorizontalAlignment="Right"
-				   VerticalAlignment="Bottom"/>
+				   VerticalAlignment="Bottom"
+				   ToolTip.Tip="Displays the version of the launcher application."/>
 
 		<StackPanel Grid.Column="0" Grid.Row="2"
 					Orientation="Horizontal"
 					FlowDirection="LeftToRight"
 					Margin="140,0,0,-85"
-					Spacing="5">
+					Spacing="5"
+					ToolTip.Tip="Links to external resources and communities.">
 
 			<Button Name="btnDiscord"
 					Width="40"
 					Height="40"
 					Classes="window"
 					Command="{Binding OpenDiscordChannelCommand}"
-					ToolTip.Tip="Discord Server">
+					ToolTip.Tip="Join the official Discord server for discussions and support.">
 				<Button.Content>
 					<PathIcon Width="25"
 							  Height="25"
@@ -209,7 +221,7 @@
 					Height="40"
 					Classes="window"
 					Command="{Binding OpenGithubCommand}"
-					ToolTip.Tip="Github Page">
+					ToolTip.Tip="Visit the project's GitHub page for source code and updates.">
 				<Button.Content>
 					<PathIcon Width="25"
 							  Height="25"
@@ -225,7 +237,7 @@
 					Height="40"
 					Classes="window"
 					Command="{Binding OpenModDbCommand}"
-					ToolTip.Tip="ModDB">
+					ToolTip.Tip="Go to ModDB for more information about RA3 mods and maps.">
 				<Button.Content>
 					<Canvas Width="25" Height="25">
 						<Canvas.RenderTransform>

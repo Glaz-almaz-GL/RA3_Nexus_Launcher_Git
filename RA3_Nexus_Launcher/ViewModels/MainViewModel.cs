@@ -11,10 +11,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Principal;
+using System.Threading.Tasks;
 
 namespace RA3_Nexus_Launcher.ViewModels;
 #pragma warning disable CA1416 // Проверка совместимости платформы
-public partial class MainViewModel : ViewModelBase
+public partial class MainViewModel(Window appWindow) : ViewModelBase
 {
     public static string CurrentVersion => $"v{AppInfo.CurrentVersion}";
     public static string BattleNetIconData => PathIconConstants.BattleNetIconData;
@@ -24,37 +25,42 @@ public partial class MainViewModel : ViewModelBase
     public static string SettingsIconData => PathIconConstants.SettingsIconData;
     public static List<InstalledModInfo> InstalledMods => InstalledModsManager.InstalledMods;
     public static bool IsAdministratorMode => IsAdministrator();
+    public static string? BattleNetPath => SettingsManager.CurrentSettings.BattleNetPath;
+    private readonly UpdateCheckerService _updateCheckerService = new(
+        new System.Net.Http.HttpClient(),
+        "Glaz-almaz-GL",
+        "RA3_Nexus_Launcher",
+        SettingsManager.CurrentSettings.InstalledVersion.ToString());
 
+    [ObservableProperty]
+    private bool _isBattleNetAvailable = !string.IsNullOrWhiteSpace(BattleNetPath);
+
+    private readonly Window? _appWindow = appWindow;
     [ObservableProperty]
     private InstalledModInfo? _selectedMod;
 
-    [RelayCommand]
-    private static void CloseWindow()
+    public async Task InitializeAsync()
     {
-        Window? window = GetThisWindow();
-        window?.Close();
+        await _updateCheckerService.CheckForUpdatesAsync();
+    }
+
+    [RelayCommand]
+    private void CloseWindow()
+    {
+        _appWindow?.Close();
     }
 
     // Команда для сворачивания окна
     [RelayCommand]
-    private static void MinimizeWindow()
+    private void MinimizeWindow()
     {
-        Window? window = GetThisWindow();
-        window?.WindowState = WindowState.Minimized;
+        _appWindow?.WindowState = WindowState.Minimized;
     }
 
     [RelayCommand]
     private void RemoveSelectedMod()
     {
         SelectedMod = null;
-    }
-
-    private static Window? GetThisWindow()
-    {
-        // Получаем активное окно (может не работать корректно, если открыто несколько окон)
-        return App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
-            ? desktop.MainWindow
-            : null;
     }
 
     [RelayCommand]
@@ -65,21 +71,35 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private static void OpenSettings()
+    private void OpenSettings()
     {
-        Window? window = GetThisWindow();
+        var settingsWindow = new SettingsWindow();
 
-
-        if (window != null)
+        if (_appWindow != null)
         {
-            new SettingsView().ShowDialog(window);
+            settingsWindow.ShowDialog(_appWindow);
+            NotificationHelpers.SetNotificationManager(settingsWindow);
+        }
+
+        settingsWindow.Closing += Settings_Closing;
+    }
+
+    private void Settings_Closing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_appWindow != null)
+        {
+            NotificationHelpers.SetNotificationManager(_appWindow);
         }
     }
 
     [RelayCommand]
     private void StartBattleNet()
     {
-        // TODO: Добавить функцию запуска RA3 BattleNet или убрать её
+        if (IsBattleNetAvailable)
+        {
+            Process.Start(BattleNetPath!);
+            NotificationHelpers.ShowInformation(string.Empty, "RA3BattleNet has been successfully launched", TimeSpan.FromSeconds(3));
+        }
     }
 
     [RelayCommand]

@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# IDE0079: Удалить ненужное подавление
+dotnet_diagnostic.IDE0079.severity = none

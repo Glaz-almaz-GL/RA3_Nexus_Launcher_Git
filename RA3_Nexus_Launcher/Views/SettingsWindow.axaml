@@ -1,0 +1,556 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:viewmodels="using:RA3_Nexus_Launcher.ViewModels"
+		xmlns:enums="clr-namespace:RA3_Nexus_Launcher.Models.Enums"
+		xmlns:converters="clr-namespace:RA3_Nexus_Launcher.Converters"
+		xmlns:helpers="clr-namespace:RA3_Nexus_Launcher.Helpers"
+		mc:Ignorable="d"
+		d:DesignWidth="720"
+		d:DesignHeight="860"
+		Width="720"
+		Height="520"
+		x:Class="RA3_Nexus_Launcher.Views.SettingsWindow"
+		x:DataType="viewmodels:SettingsViewModel"
+		FontFamily="avares://RA3_Nexus_Launcher/Assets/Fonts/#Hacen Tunisia"
+		Title="Settings"
+		Icon="/Assets/Launcher_Icon.ico"
+		ExtendClientAreaToDecorationsHint="True"
+		ExtendClientAreaChromeHints="NoChrome"
+		ExtendClientAreaTitleBarHeightHint="-1"
+		WindowStartupLocation="CenterOwner"
+		Background="#FF2D2D2D">
+
+	<Window.Resources>
+		<converters:EnumToBoolConverter x:Key="EnumToBoolConverter" />
+	</Window.Resources>
+
+	<Window.Styles>
+		<!-- Стили для кнопок -->
+		<Style Selector="Button">
+			<Setter Property="Background" Value="#FF404040"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="BorderBrush" Value="#FF555555"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="Padding" Value="10,5"/>
+			<Setter Property="Margin" Value="2"/>
+		</Style>
+
+		<Style Selector="Button:pointerover">
+			<Setter Property="Background" Value="#FF505050"/>
+		</Style>
+
+		<Style Selector="Button:pressed">
+			<Setter Property="Background" Value="#FF303030"/>
+		</Style>
+
+		<!-- Стили для TextBox -->
+		<Style Selector="TextBox">
+			<Setter Property="Background" Value="#FF3A3A3A"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="BorderBrush" Value="#FF555555"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="Padding" Value="5"/>
+		</Style>
+
+		<!-- Стили для ComboBox -->
+		<Style Selector="ComboBox">
+			<Setter Property="Background" Value="#FF3A3A3A"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="BorderBrush" Value="#FF555555"/>
+			<Setter Property="BorderThickness" Value="1"/>
+		</Style>
+
+		<!-- Стили для CheckBox -->
+		<Style Selector="CheckBox">
+			<Setter Property="Foreground" Value="White"/>
+		</Style>
+
+		<!-- Стили для TextBlock -->
+		<Style Selector="TextBlock.HeaderText">
+			<Setter Property="FontSize" Value="18"/>
+			<Setter Property="Foreground" Value="#FFCCCCCC"/>
+			<Setter Property="Margin" Value="0,0,0,10"/>
+		</Style>
+
+		<!-- Стили для кнопки закрытия -->
+		<Style Selector="Button.closeButton">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="BorderBrush" Value="Transparent"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="Margin" Value="0"/>
+			<Setter Property="Cursor" Value="Hand"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="FontSize" Value="16"/>
+		</Style>
+
+		<Style Selector="Button.closeButton:pointerover">
+			<Setter Property="Background" Value="#FFFF0000"/>
+		</Style>
+
+		<Style Selector="Button.closeButton:pressed">
+			<Setter Property="Background" Value="#FFCC0000"/>
+		</Style>
+
+	</Window.Styles>
+
+	<!-- Обертываем всё содержимое в Grid -->
+	<Grid>
+		<!-- Основной Grid с содержимым -->
+		<Grid ColumnDefinitions="Auto, *">
+			<!-- Боковая панель навигации -->
+			<StackPanel Grid.Column="0"
+						Orientation="Vertical"
+						HorizontalAlignment="Left"
+						Background="#FF252525"
+						MinWidth="200">
+				<Border Background="#FF1E1E1E"
+						CornerRadius="5"
+						Padding="10"
+						Margin="10,10,10,20">
+					<TextBlock Text="SETTINGS"
+							   TextAlignment="Center"
+							   FontSize="22"
+							   Foreground="White"
+							   ToolTip.Tip="Main settings categories"/>
+				</Border>
+
+				<Button Classes="navButton"
+						Tag="{x:Static enums:SettingsViewType.GlobalSettings}"
+						MinWidth="160"
+						MinHeight="40"
+						Content="Global Settings"
+						Margin="10,5"
+						Background="#FF3A3A3A"
+						Foreground="White"
+						Command="{Binding ShowGlobalSettingsCommand}"
+						ToolTip.Tip="Configure general game settings, profiles, and audio." />
+
+				<Button Classes="navButton"
+						Tag="{x:Static enums:SettingsViewType.Patches}"
+						MinWidth="160"
+						MinHeight="40"
+						Content="Patches"
+						Margin="10,5"
+						Background="#FF3A3A3A"
+						Foreground="White"
+						Command="{Binding ShowPatchesCommand}"
+						ToolTip.Tip="Manage game patches, fixes, and download links for online platforms." />
+			</StackPanel>
+
+			<!-- Основная область настроек -->
+			<ScrollViewer Grid.Column="1"
+						  Background="#FF363636">
+				<Grid MaxWidth="800" Margin="20">
+
+					<!-- Вкладка Global Settings -->
+					<Grid Name="gridGlobalSettings"
+						  RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto"
+						  HorizontalAlignment="Left"
+						  IsVisible="{Binding CurrentViewType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static enums:SettingsViewType.GlobalSettings}}">
+
+						<TextBlock Grid.Row="0"
+								   Margin="0,0,0,20"
+								   FontSize="24"
+								   Text="Game Settings"
+								   Classes="HeaderText"
+								   ToolTip.Tip="Basic game configuration options."/>
+
+						<!-- Путь к игре -->
+						<StackPanel Grid.Row="1"
+									Orientation="Vertical"
+									Margin="0,0,0,25">
+							<TextBlock Text="Install Directory"
+									   Classes="HeaderText"
+									   ToolTip.Tip="The folder where Red Alert 3 is installed."/>
+							<Grid ColumnDefinitions="*, Auto, Auto"
+								  Margin="0,10,0,0">
+								<TextBox Grid.Column="0"
+										 Name="txtGamePath"
+										 Watermark="Select your RA3 installation directory..."
+										 Text="{Binding SelectedGamePath}"
+										 FontSize="12"
+										 ToolTip.Tip="Path to the main RA3 executable (RA3.exe). Click Browse button to change."/>
+								<Button Grid.Column="1"
+										Name="btReload"
+										MinHeight="35"
+										MinWidth="40"
+										Margin="5,0,0,0"
+										Command="{Binding ReloadGamePathCommand}"
+										ToolTip.Tip="Attempts to automatically detect the RA3 installation path based on registry entries.">
+									<PathIcon Data="{Binding SyncArrowIconData}"/>
+								</Button>
+								<Button Grid.Column="2"
+										Name="btSelect"
+										MinHeight="35"
+										MinWidth="40"
+										Margin="5,0,0,0"
+										Command="{Binding SelectGamePathCommand}"
+										ToolTip.Tip="Opens a file dialog to manually browse and select the RA3.exe file.">
+									<PathIcon Data="{Binding OpenFolderIconData}"/>
+								</Button>
+							</Grid>
+						</StackPanel>
+
+						<!-- Настройки окна -->
+						<StackPanel Grid.Row="2"
+									Orientation="Vertical"
+									Margin="0,0,0,25">
+							<TextBlock Text="Windowing Settings"
+									   Classes="HeaderText"
+									   ToolTip.Tip="Configure how the game window appears on your screen."/>
+							<StackPanel Orientation="Vertical"
+										Spacing="10"
+										Margin="0,10,0,0">
+
+								<StackPanel Orientation="Horizontal"
+											Spacing="10"
+											VerticalAlignment="Center">
+									<TextBlock Text="Mode:"
+											   VerticalAlignment="Center"
+											   Foreground="White"
+											   Width="80"
+											   ToolTip.Tip="Choose between running the game in a window or fullscreen."/>
+									<ComboBox ItemsSource="{Binding WindowParams}"
+											  SelectedItem="{Binding SelectedWindowParam}"
+											  IsEnabled="{Binding !IsCustomResoulution}"
+											  MinWidth="150"
+											  ToolTip.Tip="Select Windowed or Fullscreen mode. Disabled if Custom Resolution is enabled."/>
+								</StackPanel>
+
+								<StackPanel Orientation="Horizontal"
+											Spacing="10"
+											VerticalAlignment="Center">
+									<CheckBox Name="chbUseCustomWindow"
+											  IsChecked="{Binding IsCustomResoulution}"
+											  VerticalAlignment="Center"
+											  ToolTip.Tip="Enables custom resolution settings below. Disables the Mode dropdown."/>
+									<TextBlock Text="Custom Resolution"
+											   VerticalAlignment="Center"
+											   Foreground="White"
+											   ToolTip.Tip="Check to enter specific width and height for the game window."/>
+								</StackPanel>
+
+								<StackPanel Orientation="Horizontal"
+											Spacing="10"
+											Margin="25,0,0,0"
+											IsVisible="{Binding IsCustomResoulution}">
+									<TextBox Watermark="Width"
+											 Text="{Binding CustomResolutionWidth}"
+											 MinWidth="80"
+											 ToolTip.Tip="Enter the desired width of the game window in pixels."/>
+									<TextBlock Text="x"
+											   VerticalAlignment="Center"
+											   FontSize="16"
+											   Foreground="White"
+											   ToolTip.Tip="Separator between width and height."/>
+									<TextBox Watermark="Height"
+											 Text="{Binding CustomResolutionHeight}"
+											 MinWidth="80"
+											 ToolTip.Tip="Enter the desired height of the game window in pixels."/>
+								</StackPanel>
+							</StackPanel>
+						</StackPanel>
+
+						<!-- Параметры запуска -->
+						<StackPanel Grid.Row="3"
+									Orientation="Vertical"
+									Margin="0,0,0,25">
+							<TextBlock Text="Launch Parameters"
+									   Classes="HeaderText"
+									   ToolTip.Tip="Additional command-line arguments passed to the game executable on startup."/>
+							<Grid ColumnDefinitions="*, Auto"
+								  RowDefinitions="Auto, Auto, Auto, Auto"
+								  Margin="0,10,0,0">
+								<TextBox Grid.Column="0" Grid.Row="0"
+										 Name="txtLaunchParameters"
+										 Watermark="Enter custom launch parameters separated by spaces..."
+										 Text="{Binding LaunchParameters, Mode=TwoWay}"
+										 AcceptsReturn="True"
+										 FontSize="12"
+										 ToolTip.Tip='Example: "-windowed -ui". These are advanced options that modify game behavior.'/>
+								<Button Grid.Column="1" Grid.Row="0"
+										Name="AllParameters"
+										Margin="10,0,0,0"
+										MinHeight="35"
+										MinWidth="40"
+										Command="{Binding OpenAllParametersCommand}"
+										ToolTip.Tip="Opens a text file listing available launch parameters and their descriptions.">
+									<PathIcon Data="{Binding ReadMoreIconData}"/>
+								</Button>
+
+								<StackPanel Grid.Column="0" Grid.Row="3"
+											Orientation="Horizontal"
+											Margin="0,15,0,0"
+											Spacing="10">
+									<TextBlock Text="Game Version:"
+											   VerticalAlignment="Center"
+											   Width="100"
+											   Foreground="White"
+											   ToolTip.Tip="Simulates a specific version of the game for compatibility with mods or online services."/>
+									<ComboBox ItemsSource="{Binding AvailableVersions}"
+											  SelectedItem="{Binding SelectedVersion}"
+											  MinWidth="200"
+											  HorizontalAlignment="Left"
+											  ToolTip.Tip="Select the version string the launcher reports to the game. 1.12 is standard.">
+									</ComboBox>
+								</StackPanel>
+							</Grid>
+						</StackPanel>
+
+						<!-- Параметры профилей -->
+						<StackPanel Grid.Row="4"
+									Orientation="Vertical"
+									Margin="0,0,0,25">
+							<TextBlock Text="Profile Settings"
+									   Classes="HeaderText"
+									   ToolTip.Tip="Configure settings specific to different game profiles (player setups)."/>
+
+							<StackPanel Orientation="Vertical"
+										Spacing="15"
+										Margin="0,10,0,0">
+
+								<StackPanel Orientation="Horizontal"
+											Spacing="10">
+									<TextBlock Text="Profile:"
+											   VerticalAlignment="Center"
+											   Width="100"
+											   Foreground="White"
+											   ToolTip.Tip="Select the active game profile whose settings will be modified here."/>
+									<ComboBox ItemsSource="{Binding AvailableProfiles}"
+											  SelectedItem="{Binding SelectedProfile}"
+											  MinWidth="200"
+											  HorizontalAlignment="Left"
+											  ToolTip.Tip="Choose the profile to configure. Changes apply only to the selected profile.">
+										<ComboBox.ItemTemplate>
+											<DataTemplate>
+												<TextBlock Text="{Binding Name}"
+														   ToolTip.Tip="Name of the game profile."/>
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+								</StackPanel>
+
+								<!-- ComboBox для GameSpy IP -->
+								<StackPanel Orientation="Horizontal"
+											Spacing="10">
+									<TextBlock Text="GameSpy IP:"
+											   VerticalAlignment="Center"
+											   Width="100"
+											   Foreground="White"
+											   ToolTip.Tip="IP address used for connecting to RA3 BattleNet or CnC Online."/>
+									<ComboBox ItemsSource="{Binding AvailableIPs}"
+											  SelectedItem="{Binding SelectedGameSpyId}"
+											  MinWidth="200"
+											  HorizontalAlignment="Left"
+											  ToolTip.Tip="Select the network interface IP address for online play. The tooltip shows the interface name.">
+										<!-- Шаблон элемента для отображения IP и ToolTip имени интерфейса -->
+										<ComboBox.ItemTemplate>
+											<DataTemplate DataType="helpers:NetworkInterfaceInfo">
+												<TextBlock Text="{Binding IpAddress}"
+														   ToolTip.Tip="{Binding InterfaceName}">
+												</TextBlock>
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+								</StackPanel>
+
+								<!-- ComboBox для LAN IP -->
+								<StackPanel Orientation="Horizontal"
+											Spacing="10">
+									<TextBlock Text="LAN IP:"
+											   VerticalAlignment="Center"
+											   Width="100"
+											   Foreground="White"
+											   ToolTip.Tip="IP address used for detecting players in the local network."/>
+									<ComboBox ItemsSource="{Binding AvailableIPs}"
+											  SelectedItem="{Binding SelectedIp}"
+											  MinWidth="200"
+											  HorizontalAlignment="Left"
+											  ToolTip.Tip="Select the network interface IP address for LAN games. The tooltip shows the interface name.">
+										<!-- Шаблон элемента для отображения IP и ToolTip имени интерфейса -->
+										<ComboBox.ItemTemplate>
+											<DataTemplate DataType="helpers:NetworkInterfaceInfo">
+												<TextBlock Text="{Binding IpAddress}"
+														   ToolTip.Tip="{Binding InterfaceName}">
+												</TextBlock>
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+								</StackPanel>
+
+								<StackPanel Orientation="Horizontal"
+											Spacing="10"
+											Margin="0,15,0,0">
+									<Button Content="Apply IP Settings"
+											Command="{Binding ApplyIpSettingsCommand}"
+											MinWidth="120"
+											ToolTip.Tip="Saves the selected IP addresses to the Options.ini file of the currently selected profile." />
+
+									<Button Content="Fix Skirmish Files"
+											Command="{Binding FixSkirmishFileCommand}"
+											MinWidth="120"
+											ToolTip.Tip="Checks and repairs potential issues in all skirmish.ini files associated with available profiles without deleting them." />
+
+									<Button Content="Enable Maps in Registry"
+											Command="{Binding EnableMapsInRegistryCommand}"
+											MinWidth="150"
+											ToolTip.Tip="Modifies Windows Registry to ensure custom maps are recognized by the game. Requires administrator privileges." />
+								</StackPanel>
+
+								<!-- Новый блок для настроек аудио -->
+								<StackPanel Grid.Row="5" Orientation="Vertical" Spacing="10" Margin="0,25,0,0">
+									<TextBlock Text="Audio Settings" Classes="HeaderText"
+											   ToolTip.Tip="Adjust volume levels for different types of sounds in the game." />
+
+									<StackPanel Orientation="Vertical" Spacing="10">
+										<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+											<TextBlock Text="Ambient Volume:" Width="120" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Controls the volume of background environmental sounds." />
+											<TextBox Text="{Binding AmbientVolumeStr, Mode=TwoWay, StringFormat=F6}"
+													 Watermark="0.000000 - 100.000000"
+													 MinWidth="100"
+													 ToolTip.Tip="Enter ambient volume as a percentage (0.000000 to 100.000000). Changes are saved when focus is lost or Apply is clicked." />
+											<TextBlock Text="%" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Indicates the value is a percentage." />
+										</StackPanel>
+
+										<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+											<TextBlock Text="Movie Volume:" Width="120" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Controls the volume of sounds played during cutscenes and movies." />
+											<TextBox Text="{Binding MovieVolumeStr, Mode=TwoWay, StringFormat=F6}"
+													 Watermark="0.000000 - 100.000000"
+													 MinWidth="100"
+													 ToolTip.Tip="Enter movie volume as a percentage (0.000000 to 100.000000). Changes are saved when focus is lost or Apply is clicked." />
+											<TextBlock Text="%" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Indicates the value is a percentage." />
+										</StackPanel>
+
+										<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+											<TextBlock Text="Music Volume:" Width="120" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Controls the volume of background music." />
+											<TextBox Text="{Binding MusicVolumeStr, Mode=TwoWay, StringFormat=F6}"
+													 Watermark="0.000000 - 100.000000"
+													 MinWidth="100"
+													 ToolTip.Tip="Enter music volume as a percentage (0.000000 to 100.000000). Changes are saved when focus is lost or Apply is clicked." />
+											<TextBlock Text="%" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Indicates the value is a percentage." />
+										</StackPanel>
+
+										<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+											<TextBlock Text="SFX Volume:" Width="120" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Controls the volume of sound effects (e.g., explosions, unit voices)." />
+											<TextBox Text="{Binding SfxVolumeStr, Mode=TwoWay, StringFormat=F6}"
+													 Watermark="0.000000 - 100.000000"
+													 MinWidth="100"
+													 ToolTip.Tip="Enter SFX volume as a percentage (0.000000 to 100.000000). Changes are saved when focus is lost or Apply is clicked." />
+											<TextBlock Text="%" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Indicates the value is a percentage." />
+										</StackPanel>
+
+										<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+											<TextBlock Text="Voice Volume:" Width="120" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Controls the volume of unit voices and commander dialogue." />
+											<TextBox Text="{Binding VoiceVolumeStr, Mode=TwoWay, StringFormat=F6}"
+													 Watermark="0.000000 - 100.000000"
+													 MinWidth="100"
+													 ToolTip.Tip="Enter voice volume as a percentage (0.000000 to 100.000000). Changes are saved when focus is lost or Apply is clicked." />
+											<TextBlock Text="%" VerticalAlignment="Center" Foreground="White"
+													   ToolTip.Tip="Indicates the value is a percentage." />
+										</StackPanel>
+									</StackPanel>
+								</StackPanel>
+								<!-- Конец блока аудио -->
+
+								<StackPanel Orientation="Vertical"
+											Spacing="10"
+											Margin="0,25,0,0">
+
+									<TextBlock Text="Language Settings"
+											   Classes="HeaderText"
+											   ToolTip.Tip="Change the language used by the game." />
+
+									<StackPanel Orientation="Horizontal" Spacing="10">
+										<TextBlock Text="Language:"
+												   VerticalAlignment="Center"
+												   Width="100"
+												   Foreground="White"
+												   ToolTip.Tip="Select the desired language for the game." />
+
+										<ComboBox ItemsSource="{Binding AvailableLanguages}"
+												  SelectedItem="{Binding SelectedLanguage}"
+												  MinWidth="200"
+												  VerticalAlignment="Center"
+												  ToolTip.Tip="Choose the language file (.csf) to use. Changes take effect after restarting the game." />
+
+										<Button Content="Apply Language"
+												Command="{Binding ApplyLanguageCommand}"
+												MinWidth="150"
+												VerticalAlignment="Center"
+												ToolTip.Tip='Changes the selected language in the Windows Registry for the game. May help resolve the "Could not find game version" error.' />
+									</StackPanel>
+								</StackPanel>
+							</StackPanel>
+						</StackPanel>
+					</Grid>
+
+					<!-- Вкладка Patches -->
+					<StackPanel Name="panelPatches"
+								Margin="0,0,0,20"
+								IsVisible="{Binding CurrentViewType, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static enums:SettingsViewType.Patches}}">
+						<TextBlock Text="Patches Settings" FontSize="24" Classes="HeaderText"
+								   ToolTip.Tip="Tools and links for game compatibility and online play." />
+
+						<StackPanel Spacing="5">
+							<Button Content="Install 4GB Patch"
+									Command="{Binding InstallFourGBPatchCommand}"
+									Margin="0,5,0,0"
+									ToolTip.Tip="Applies a modification to allow the game to access more than 2GB of RAM, potentially improving stability. Requires administrator privileges." />
+
+							<Button Content="Fix Registry"
+									Command="{Binding FixRegistryCommand}"
+									Margin="0,5,0,0"
+									ToolTip.Tip="Corrects common Windows Registry entries that might cause the game to crash or fail to launch." />
+
+							<Button Content="Generate New CD Key"
+									Command="{Binding GenerateCDKeyCommand}"
+									Margin="0,5,0,0"
+									ToolTip.Tip="Creates a new unique CD key to avoid conflicts with other RA3 installations." />
+
+							<Button Content="Download RA3 BattleNet"
+									Command="{Binding OpenRA3BattleNetUrlCommand}"
+									Margin="0,5,0,0"
+									ToolTip.Tip="Opens your web browser to download the RA3 BattleNet client for online multiplayer." />
+
+							<Button Content="Download Tacitus (CnC Online)"
+									Command="{Binding OpenTacitusUrlCommand}"
+									Margin="0,5,0,0"
+									ToolTip.Tip="Opens your web browser to download Tacitus, an alternative platform for CnC online play." />
+
+							<Button Content="Download Radmin VPN"
+									Command="{Binding OpenRadminVPNUrlCommand}"
+									Margin="0,5,0,0"
+									ToolTip.Tip="Opens your web browser to download Radmin VPN, useful for setting up virtual LAN games with friends." />
+						</StackPanel>
+					</StackPanel>
+				</Grid>
+			</ScrollViewer>
+		</Grid>
+
+		<!-- Кнопка закрытия поверх основного содержимого -->
+		<Button Classes="closeButton"
+				VerticalAlignment="Top"
+				HorizontalAlignment="Right"
+				Height="40"
+				Width="40"
+				VerticalContentAlignment="Center"
+				HorizontalContentAlignment="Center"
+				Command="{Binding CloseWindowCommand}"
+				Content="✕"
+				Margin="10" ZIndex="100"
+				ToolTip.Tip="Close the settings window."/>
+	</Grid>
+</Window>
