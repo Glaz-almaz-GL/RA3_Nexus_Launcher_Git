@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using RA3_Nexus_Launcher.Managers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,16 +41,9 @@ namespace RA3_Nexus_Launcher.Helpers.Patches
                 // Сообщаем пользователю, что требуется запуск от имени администратора
                 Debug.WriteLine("Для выполнения этой операции необходимы права администратора.");
 
-                // Перезапускаем приложение от имени администратора
-                ProcessStartInfo process = new()
-                {
-                    FileName = Environment.ProcessPath!,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
                 try
                 {
-                    Process.Start(process);
+                    GamePatchesManager.RestartWithAdministratorPrivileges();
                 }
                 catch (Exception ex)
                 {
@@ -67,15 +61,9 @@ namespace RA3_Nexus_Launcher.Helpers.Patches
                 Debug.WriteLine("Для выполнения этой операции необходимы права администратора.");
 
                 // Перезапускаем приложение от имени администратора
-                ProcessStartInfo process = new()
-                {
-                    FileName = Environment.ProcessPath!,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
                 try
                 {
-                    Process.Start(process);
+                    GamePatchesManager.RestartWithAdministratorPrivileges();
                 }
                 catch (Exception ex)
                 {

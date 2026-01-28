@@ -41,6 +41,19 @@ public partial class MainViewModel(Window appWindow) : ViewModelBase
 
     public async Task InitializeAsync()
     {
+        if (IsAdministratorMode)
+        {
+            NotificationHelpers.ShowSuccess("Successful launch", "Launch with administrator privileges successful", TimeSpan.FromSeconds(5));
+        }
+
+        if (!SettingsManager.CurrentSettings.IsQuickLoaderUsed)
+        {
+            NotificationHelpers.ShowInformation("RA3 QuickLauncher is not used (Click this post to use RA3 QuickLoader).",
+                "RA3 QuickLoader - This is an improved version of RA3.exe (the original game executable file) for quickly launching the game (without waiting up to 30 seconds)",
+                TimeSpan.FromSeconds(10),
+                () => GamePatchesManager.ApplyQuickLoader());
+        }
+
         await _updateCheckerService.CheckForUpdatesAsync();
     }
 

@@ -1,4 +1,5 @@
 ﻿using RA3_Nexus_Launcher.Constants;
+using RA3_Nexus_Launcher.Managers;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -57,15 +58,7 @@ namespace RA3_Nexus_Launcher.Helpers.Patches
             }
             catch (System.ComponentModel.Win32Exception)
             {
-                ProcessStartInfo process = new()
-                {
-                    FileName = Environment.ProcessPath!,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-
-                Process.Start(process);
-                Environment.Exit(0);
+                GamePatchesManager.RestartWithAdministratorPrivileges();
             }
             catch (Exception ex)
             {

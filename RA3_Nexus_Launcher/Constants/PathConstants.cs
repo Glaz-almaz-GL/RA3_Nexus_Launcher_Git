@@ -27,5 +27,6 @@ namespace RA3_Nexus_Launcher.Constants
         public static readonly string RA3RegistryFix32 = Path.Combine(LauncherRegistryFolder, "Fix_RA3_x32.reg");
         public static readonly string RA3FourGBPatch = Path.Combine(LauncherToolsFolder, "4GBPatch.exe");
         public static readonly string RA3QuickLoader = Path.Combine(LauncherToolsFolder, "RA3.exe");
+        public static readonly string RA3OriginalLoader = Path.Combine(LauncherToolsFolder, "RA3-Original.exe");
     }
 }

@@ -511,19 +511,10 @@ namespace RA3_Nexus_Launcher.ViewModels
                 // Это наш случай: нужны права администратора
                 NotificationHelpers.ShowError("Admin Privileges Required", "Failed to set language. The launcher needs Administrator privileges to modify the Windows Registry.", TimeSpan.FromSeconds(5));
 
-                // Запрашиваем перезапуск от имени администратора
-                var process = new ProcessStartInfo
-                {
-                    FileName = Environment.ProcessPath!,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-
                 try
                 {
                     NotificationHelpers.ShowInformation("Restart Initiated", "A new instance of the launcher will start with Administrator privileges. You can close this window.", TimeSpan.FromSeconds(4));
-                    Process.Start(process);
-                    Environment.Exit(0);
+                    GamePatchesManager.RestartWithAdministratorPrivileges();
                 }
                 catch (Exception startupEx)
                 {
@@ -547,15 +538,22 @@ namespace RA3_Nexus_Launcher.ViewModels
                 return;
             }
 
-            // Take IP address from SelectedGameSpyId/SelectedIp structure
-            string? gameSpyIp = SelectedGameSpyId.IpAddress == NoneIPValue ? "None" : SelectedGameSpyId.IpAddress;
-            string? ipAddress = SelectedIp.IpAddress == NoneIPValue ? "None" : SelectedIp.IpAddress;
+            try
+            {
+                string? gameSpyIp = SelectedGameSpyId.IpAddress == NoneIPValue ? "None" : SelectedGameSpyId.IpAddress;
+                string? ipAddress = SelectedIp.IpAddress == NoneIPValue ? "None" : SelectedIp.IpAddress;
 
-            GameProfile newGameProfile = SelectedProfile.Value;
-            newGameProfile.GameSpyIdAddress = gameSpyIp;
-            newGameProfile.IPAddress = ipAddress;
+                GameProfile newGameProfile = SelectedProfile.Value;
+                newGameProfile.GameSpyIdAddress = gameSpyIp;
+                newGameProfile.IPAddress = ipAddress;
 
-            GameProfilesManager.UpdateProfileIpAddresses(newGameProfile);
+                GameProfilesManager.UpdateProfileIpAddresses(newGameProfile);
+                NotificationHelpers.ShowSuccess("IP settings have been applied", $"Profile Name: {SelectedProfile.Value.Name}\nLAN IP: {ipAddress}\nGameSpy IP: {gameSpyIp}", TimeSpan.FromSeconds(3));
+            }
+            catch (Exception ex)
+            {
+                NotificationHelpers.ShowError("Applying IP settings failed.", $"Error applying IP settings in registry: {ex.Message}", TimeSpan.FromSeconds(5));
+            }
         }
 
         [RelayCommand]
@@ -565,6 +563,11 @@ namespace RA3_Nexus_Launcher.ViewModels
             {
                 NotificationHelpers.ShowWarning("No Profiles", "No profiles found to fix skirmish files.", TimeSpan.FromSeconds(4));
             }
+            else
+            {
+                SkirmishFixer.CheckAndFixSkirmish();
+                NotificationHelpers.ShowSuccess("All Skirmish.ini files have been repaired (if required)", string.Empty, TimeSpan.FromSeconds(3));
+            }
         }
 
         [RelayCommand]
@@ -573,7 +576,6 @@ namespace RA3_Nexus_Launcher.ViewModels
             try
             {
                 GameHelper.EnableMaps();
-                // NotificationHelpers.ShowSuccess("Maps Enabled", "Map synchronization enabled in the registry.", TimeSpan.FromSeconds(3)); // Это уже делает GameHelper
             }
             catch (Exception ex)
             {

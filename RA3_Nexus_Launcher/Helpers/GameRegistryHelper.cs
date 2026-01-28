@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using RA3_Nexus_Launcher.Constants;
 using RA3_Nexus_Launcher.Helpers; // Ensure NotificationHelpers is accessible
+using RA3_Nexus_Launcher.Managers;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -318,8 +319,6 @@ namespace RA3_Nexus_Launcher.Helpers
                 userSubKey.SetValue(LANGUAGE_VALUE_NAME, languageCode, RegistryValueKind.String);
                 Debug.WriteLine($"Value '{LANGUAGE_VALUE_NAME}' updated to '{languageCode}' in HKEY_CURRENT_USER\\{RegistryConstants.RA3GamePath}");
             }
-
-            NotificationHelpers.ShowSuccess("Language Set", $"Game language successfully set to '{languageCode}'.", TimeSpan.FromSeconds(3));
         }
 
         public static string? GetLanguage(string gameFolderPath)
@@ -427,18 +426,11 @@ namespace RA3_Nexus_Launcher.Helpers
 
                 NotificationHelpers.ShowSuccess("Maps Enabled", "Map synchronization has been enabled in the registry.", TimeSpan.FromSeconds(3));
             }
-            catch (UnauthorizedAccessException)
+            catch (Exception ex) when (ex is UnauthorizedAccessException or SecurityException or IOException)
             {
                 NotificationHelpers.ShowError("Admin Privileges Required", "Failed to enable maps in registry. Attempting to restart launcher as Administrator...", TimeSpan.FromSeconds(5));
-                ProcessStartInfo process = new()
-                {
-                    FileName = Environment.ProcessPath!,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
 
-                Process.Start(process);
-                Environment.Exit(0);
+                GamePatchesManager.RestartWithAdministratorPrivileges();
             }
             catch (Exception ex)
             {

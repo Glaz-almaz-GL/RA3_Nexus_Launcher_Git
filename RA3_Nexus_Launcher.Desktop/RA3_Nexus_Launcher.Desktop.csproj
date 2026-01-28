@@ -8,6 +8,8 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Launcher_Icon.ico</ApplicationIcon>
+    <AssemblyName></AssemblyName>
+    <AssemblyTitle></AssemblyTitle>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Launcher_Icon.ico" />

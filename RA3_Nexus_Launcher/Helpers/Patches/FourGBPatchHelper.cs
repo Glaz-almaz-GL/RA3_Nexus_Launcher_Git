@@ -1,4 +1,5 @@
 ﻿using RA3_Nexus_Launcher.Constants;
+using RA3_Nexus_Launcher.Managers;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -52,15 +53,7 @@ namespace RA3_Nexus_Launcher.Helpers.Patches
         {
             if (ex.NativeErrorCode == ERROR_ELEVATION_REQUIRED)
             {
-                ProcessStartInfo process = new()
-                {
-                    FileName = Environment.ProcessPath!,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-
-                Process.Start(process);
-                Environment.Exit(0);
+                GamePatchesManager.RestartWithAdministratorPrivileges();
                 return;
             }
 
@@ -74,15 +67,7 @@ namespace RA3_Nexus_Launcher.Helpers.Patches
             Win32Exception? innerEx = ex.InnerException as System.ComponentModel.Win32Exception;
             if (innerEx?.NativeErrorCode == ERROR_ELEVATION_REQUIRED)
             {
-                ProcessStartInfo process = new()
-                {
-                    FileName = Environment.ProcessPath!,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-
-                Process.Start(process);
-                Environment.Exit(0);
+                GamePatchesManager.RestartWithAdministratorPrivileges();
                 return;
             }
 

@@ -28,19 +28,6 @@ public partial class MainWindow : Window
 
         // Запускаем InitializeAsync в контексте UI-потока
         Dispatcher.UIThread.InvokeAsync(mainViewModel.InitializeAsync, DispatcherPriority.Background);
-        if (!SettingsManager.CurrentSettings.IsQuickLoaderUsed)
-        {
-            try
-            {
-                File.Copy(PathConstants.RA3QuickLoader, SettingsManager.CurrentSettings.GamePath, true);
-                SettingsManager.CurrentSettings.IsQuickLoaderUsed = true;
-                SettingsManager.SaveCurrentSettings();
-            }
-            catch (Exception ex)
-            {
-                NotificationHelpers.ShowError("Error applying QuickLoader to the game", $"{ex.Message} {ex.InnerException}", TimeSpan.FromSeconds(5));
-            }
-        }
     }
 
     private void OnPointerPressed(object sender, PointerPressedEventArgs e)
